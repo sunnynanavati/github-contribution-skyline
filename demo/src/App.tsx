@@ -7,7 +7,7 @@ import { makeFixture } from './fixture';
 
 type PanelName = 'install' | 'description' | 'code';
 
-const SOURCE_URL = 'https://github.com/Callisto45/github-contribution-skyline';
+const SOURCE_URL = 'https://github.com/sunnynanavati/github-contribution-skyline';
 const INSTALL_COMMAND = 'npm install github-contribution-skyline';
 const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/react";
 
