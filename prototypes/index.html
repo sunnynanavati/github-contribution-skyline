@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Skyline — Prototype</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; background: #f5f4f0; }
+    button { font: inherit; }
+    #stage { min-height: 100vh; }
+    .prototype-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      color: var(--page-ink, #172019);
+      background: var(--page-bg, #f5f4f0);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .prototype-header {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .prototype-mark { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+    .prototype-meta { color: var(--page-muted, #647069); font-size: 12px; }
+    .prototype-main {
+      width: min(1180px, calc(100% - 40px));
+      min-width: 0;
+      margin: 0 auto;
+      padding: clamp(28px, 7vh, 84px) 0 110px;
+      display: grid;
+      align-content: center;
+      gap: 28px;
+    }
+    .prototype-copy { min-width: 0; max-width: 660px; }
+    github-skyline { min-width: 0; max-width: 100%; }
+    .prototype-kicker {
+      margin: 0 0 12px;
+      color: var(--page-accent, #1f883d);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .prototype-copy h1 {
+      margin: 0;
+      font-size: clamp(36px, 6vw, 72px);
+      line-height: 0.96;
+      letter-spacing: -0.065em;
+      font-weight: 650;
+    }
+    .prototype-copy p:last-child {
+      max-width: 520px;
+      margin: 18px 0 0;
+      color: var(--page-muted, #647069);
+      font-size: clamp(14px, 1.5vw, 17px);
+      line-height: 1.55;
+    }
+    @media (max-width: 640px) {
+      .prototype-header { width: min(100% - 28px, 1180px); padding-top: 18px; }
+      .prototype-main { width: min(100% - 20px, 1180px); padding-top: 30px; }
+      .prototype-copy { padding: 0 4px; }
+      .prototype-copy h1 { font-size: clamp(38px, 13vw, 58px); }
+    }
+  </style>
+</head>
+<body>
+  <main id="stage"></main>
+
+  <script>
+    const COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+    const LEVEL_HEIGHTS = [0.06, 0.22, 0.46, 0.73, 1];
+
+    function mulberry32(seed) {
+      return function random() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function makeContributions() {
+      const random = mulberry32(20260924);
+      return Array.from({ length: 53 }, (_, week) =>
+        Array.from({ length: 7 }, (_, day) => {
+          const season = 0.16 * Math.sin(week * 0.36) + 0.12 * Math.cos((week + day) * 0.61);
+          const sprint = week > 16 && week < 24 ? 0.22 : 0;
+          const release = week > 39 && week < 45 ? 0.3 : 0;
+          const weekend = day === 0 || day === 6 ? -0.14 : 0;
+          const score = random() + season + sprint + release + weekend;
+          if (score < 0.43) return 0;
+          if (score < 0.66) return 1;
+          if (score < 0.84) return 2;
+          if (score < 1.01) return 3;
+          return 4;
+        })
+      );
+    }
+
+    const CONTRIBUTIONS = makeContributions();
+
+    const SKYLINE_CONFIG = {
+        bg: '#ffffff', ink: '#172019', muted: '#68736c', border: '#d8ded9',
+        surface: '#f7f9f7', roof: COLORS, grid: '#dfe5e0', sideShade: 0.71,
+        angleX: 0.82, angleY: 0.41, height: 78, footprint: 0.8,
+        panelTitle: 'Skyline details',
+        defaults: { buildingDetail: true, heightScale: 1 }
+    };
+
+    class GitHubSkyline extends HTMLElement {
+      connectedCallback() {
+        this.config = SKYLINE_CONFIG;
+        this.settings = { ...this.config.defaults };
+        this.settingsOpen = new URLSearchParams(location.search).get('controls') === 'open';
+        this.progress = 0;
+        this.target = 0;
+        this.lastTime = performance.now();
+        this.raf = 0;
+        this.resizeObserver = new ResizeObserver(() => this.resize());
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot.innerHTML = `
+          <style>
+            :host { display: block; width: 100%; }
+            .shell {
+              position: relative;
+              min-height: clamp(390px, 55vw, 650px);
+              overflow: hidden;
+              border: 1px solid ${this.config.border};
+              border-radius: 20px;
+              background: ${this.config.bg};
+              box-shadow: 0 24px 70px rgba(37,52,42,.10);
+              outline: none;
+            }
+            .shell:focus-visible { box-shadow: 0 0 0 3px #2f9e55, 0 24px 70px rgba(37,52,42,.10); }
+            canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+            .topline {
+              position: absolute; z-index: 2; inset: 18px 20px auto;
+              display: flex; justify-content: space-between; gap: 20px;
+              color: ${this.config.ink}; pointer-events: none;
+              font: 600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            }
+            .hint { color: ${this.config.muted}; font-weight: 500; }
+            .details-toggle {
+              position: absolute; z-index: 5; top: 12px; right: 14px;
+              height: 32px; display: inline-flex; align-items: center; gap: 7px;
+              padding: 0 11px; border: 1px solid ${this.config.border}; border-radius: 999px;
+              background: color-mix(in srgb, ${this.config.bg} 90%, transparent);
+              color: ${this.config.ink}; cursor: pointer;
+              font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+              -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+              transition: transform 160ms ease-out, background 160ms ease-out;
+            }
+            .details-toggle:hover { background: ${this.config.surface}; }
+            .details-toggle:active { transform: scale(.97); }
+            .details-toggle:focus-visible { outline: 2px solid #2f9e55; outline-offset: 2px; }
+            .details-toggle svg { width: 13px; height: 13px; }
+            .settings-panel {
+              position: absolute; z-index: 4; top: 52px; right: 14px;
+              width: 244px; padding: 14px;
+              border: 1px solid ${this.config.border}; border-radius: 14px;
+              background: color-mix(in srgb, ${this.config.bg} 94%, transparent);
+              color: ${this.config.ink};
+              box-shadow: 0 14px 44px rgba(0,0,0,.16);
+              -webkit-backdrop-filter: blur(16px) saturate(1.15);
+              backdrop-filter: blur(16px) saturate(1.15);
+              opacity: 0; transform: translateY(-7px) scale(.98); transform-origin: top right;
+              pointer-events: none;
+              transition: opacity 180ms ease-out, transform 180ms cubic-bezier(.2,.8,.2,1);
+              font: 500 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+            }
+            .settings-panel[data-open] { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+            .settings-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+            .settings-head strong { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+            .reset {
+              padding: 0; border: 0; background: transparent; color: ${this.config.muted};
+              cursor: pointer; font: inherit;
+            }
+            .reset:hover { color: ${this.config.ink}; }
+            .setting-row {
+              min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+              border-top: 1px solid ${this.config.border};
+            }
+            .switch { position: relative; width: 30px; height: 18px; flex: 0 0 auto; }
+            .switch input { position: absolute; opacity: 0; pointer-events: none; }
+            .track {
+              position: absolute; inset: 0; border-radius: 999px; background: ${this.config.border};
+              cursor: pointer; transition: background 160ms ease-out;
+            }
+            .track::after {
+              content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px;
+              border-radius: 50%; background: ${this.config.bg}; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+              transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+            }
+            .switch input:checked + .track { background: #2f9e55; }
+            .switch input:checked + .track::after { transform: translateX(12px); }
+            .switch input:focus-visible + .track { outline: 2px solid #2f9e55; outline-offset: 2px; }
+            .range-row { display: grid; gap: 7px; padding-top: 10px; border-top: 1px solid ${this.config.border}; }
+            .range-meta { display: flex; justify-content: space-between; color: ${this.config.muted}; }
+            input[type='range'] { width: 100%; accent-color: #2f9e55; cursor: pointer; }
+            .legend {
+              position: absolute; z-index: 2; left: 20px; bottom: 18px;
+              display: flex; align-items: center; gap: 5px;
+              color: ${this.config.muted}; pointer-events: none;
+              font: 500 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            }
+            .swatch { width: 10px; height: 10px; border-radius: 2px; }
+            .tooltip {
+              position: absolute; z-index: 3; opacity: 0; pointer-events: none;
+              padding: 7px 9px; border: 1px solid ${this.config.border}; border-radius: 7px;
+              background: ${this.config.bg}; color: ${this.config.ink};
+              box-shadow: 0 8px 28px rgba(0,0,0,.16); transform: translate(-50%, -115%);
+              font: 600 11px/1.25 ui-monospace, SFMono-Regular, Menlo, monospace;
+              transition: opacity 120ms ease-out;
+              white-space: nowrap;
+            }
+            @media (max-width: 640px) {
+              .shell { min-height: 430px; border-radius: 14px; }
+              .topline { inset: 14px 14px auto; }
+              .hint { display: none; }
+              .topline span:first-child { max-width: calc(100% - 92px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+              .settings-panel { top: 50px; right: 10px; width: min(244px, calc(100% - 20px)); }
+              .details-toggle { top: 10px; right: 10px; }
+              .legend { left: 14px; bottom: 14px; }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .settings-panel, .details-toggle, .track, .track::after { transition: none; }
+            }
+          </style>
+          <section class="shell" tabindex="0" aria-label="GitHub contribution skyline. Hover or focus to view the standard contribution graph.">
+            <canvas role="img" aria-label="One year of GitHub contributions shown as a three-dimensional skyline"></canvas>
+            <div class="topline"><span>github.com/sunny · 1,247 contributions</span><span class="hint" style="margin-right:94px">HOVER TO FLATTEN</span></div>
+            <button class="details-toggle" type="button" aria-expanded="${this.settingsOpen}" aria-controls="skyline-settings">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4h10M5.5 8h5M7 12h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Details
+            </button>
+            <div class="settings-panel" id="skyline-settings" aria-hidden="${!this.settingsOpen}" ${this.settingsOpen ? 'data-open' : ''}>
+              <div class="settings-head"><strong>${this.config.panelTitle}</strong><button class="reset" type="button">Reset</button></div>
+              ${this.settingRow('buildingDetail', 'Building detail')}
+              <label class="range-row"><span class="range-meta"><span>Height scale</span><output>100%</output></span><input name="heightScale" type="range" min="60" max="140" value="100" step="5"></label>
+            </div>
+            <div class="legend"><span>Less</span>${this.config.roof.map(color => `<i class="swatch" style="background:${color}"></i>`).join('')}<span>More</span></div>
+            <div class="tooltip"></div>
+          </section>`;
+
+        this.shell = this.shadowRoot.querySelector('.shell');
+        this.canvas = this.shadowRoot.querySelector('canvas');
+        this.context = this.canvas.getContext('2d');
+        this.tooltip = this.shadowRoot.querySelector('.tooltip');
+        this.detailsToggle = this.shadowRoot.querySelector('.details-toggle');
+        this.settingsPanel = this.shadowRoot.querySelector('.settings-panel');
+        this.onEnter = () => this.setTarget(1);
+        this.onLeave = () => { this.setTarget(0); this.tooltip.style.opacity = 0; };
+        this.onMove = event => this.updateTooltip(event);
+        this.canvas.addEventListener('pointerenter', this.onEnter);
+        this.canvas.addEventListener('pointerleave', this.onLeave);
+        this.canvas.addEventListener('pointermove', this.onMove);
+        this.shell.addEventListener('focus', this.onEnter);
+        this.shell.addEventListener('blur', this.onLeave);
+        this.detailsToggle.addEventListener('click', () => this.toggleSettings());
+        this.settingsPanel.addEventListener('change', event => this.updateSetting(event));
+        this.settingsPanel.addEventListener('input', event => this.updateSetting(event));
+        this.settingsPanel.querySelector('.reset').addEventListener('click', () => this.resetSettings());
+        this.resizeObserver.observe(this.shell);
+        this.resize();
+        this.animate(performance.now());
+      }
+
+      settingRow(name, label) {
+        return `<label class="setting-row"><span>${label}</span><span class="switch"><input name="${name}" type="checkbox" ${this.settings[name] ? 'checked' : ''}><i class="track"></i></span></label>`;
+      }
+
+      toggleSettings() {
+        this.settingsOpen = !this.settingsOpen;
+        this.settingsPanel.toggleAttribute('data-open', this.settingsOpen);
+        this.settingsPanel.setAttribute('aria-hidden', String(!this.settingsOpen));
+        this.detailsToggle.setAttribute('aria-expanded', String(this.settingsOpen));
+      }
+
+      updateSetting(event) {
+        const input = event.target;
+        if (!input.name) return;
+        if (input.type === 'range') {
+          this.settings.heightScale = Number(input.value) / 100;
+          this.settingsPanel.querySelector('output').textContent = `${input.value}%`;
+        } else {
+          this.settings[input.name] = input.checked;
+        }
+        this.draw();
+      }
+
+      resetSettings() {
+        this.settings = { ...this.config.defaults };
+        for (const input of this.settingsPanel.querySelectorAll('input')) {
+          if (input.type === 'range') input.value = String(this.settings.heightScale * 100);
+          else input.checked = this.settings[input.name];
+        }
+        this.settingsPanel.querySelector('output').textContent = `${this.settings.heightScale * 100}%`;
+        this.draw();
+      }
+
+      disconnectedCallback() {
+        cancelAnimationFrame(this.raf);
+        this.resizeObserver?.disconnect();
+      }
+
+      setTarget(value) {
+        this.target = value;
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          this.progress = value;
+          this.draw();
+        }
+      }
+
+      resize() {
+        const rect = this.shell.getBoundingClientRect();
+        const ratio = Math.min(devicePixelRatio || 1, 2);
+        this.width = rect.width;
+        this.height = rect.height;
+        this.canvas.width = Math.max(1, Math.round(rect.width * ratio));
+        this.canvas.height = Math.max(1, Math.round(rect.height * ratio));
+        this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        this.draw();
+      }
+
+      animate(time) {
+        const dt = Math.min(32, time - this.lastTime);
+        this.lastTime = time;
+        const delta = 1 - Math.pow(1 - 0.24, dt / 16.67);
+        this.progress += (this.target - this.progress) * delta;
+        if (Math.abs(this.target - this.progress) < 0.001) this.progress = this.target;
+        this.draw();
+        this.raf = requestAnimationFrame(next => this.animate(next));
+      }
+
+      geometry() {
+        const compact = this.width < 640;
+        const flatCell = Math.min((this.width - (compact ? 30 : 90)) / 53, (this.height - 125) / 7);
+        const flatW = flatCell * 0.78;
+        const flatGridWidth = flatCell * 53;
+        const flatGridHeight = flatCell * 7;
+        const flatLeft = (this.width - flatGridWidth) / 2;
+        const flatTop = (this.height - flatGridHeight) / 2 + 5;
+
+        const sidePadding = compact ? 22 : 86;
+        const verticalPadding = compact ? 108 : 132;
+        const isoWFromWidth = (this.width - sidePadding) / 60;
+        const isoWFromHeight = (this.height - verticalPadding - this.config.height) /
+          (59 * (this.config.angleY / this.config.angleX));
+        const isoW = Math.max(3, Math.min(isoWFromWidth, isoWFromHeight));
+        const isoH = isoW * (this.config.angleY / this.config.angleX);
+        const isoCenterX = this.width * 0.5 - 23 * isoW;
+        const isoCenterY = (compact ? 66 : 60) + this.config.height;
+        return { compact, flatCell, flatW, flatLeft, flatTop, isoW, isoH, isoCenterX, isoCenterY };
+      }
+
+      isoPoint(col, row, z, geometry) {
+        return {
+          x: geometry.isoCenterX + (col - row) * geometry.isoW,
+          y: geometry.isoCenterY + (col + row) * geometry.isoH - z
+        };
+      }
+
+      flatCorners(col, row, geometry) {
+        const x = geometry.flatLeft + col * geometry.flatCell + (geometry.flatCell - geometry.flatW) / 2;
+        const y = geometry.flatTop + row * geometry.flatCell + (geometry.flatCell - geometry.flatW) / 2;
+        return [
+          { x, y }, { x: x + geometry.flatW, y },
+          { x: x + geometry.flatW, y: y + geometry.flatW }, { x, y: y + geometry.flatW }
+        ];
+      }
+
+      mixPoint(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+
+      shade(hex, factor) {
+        const value = parseInt(hex.slice(1), 16);
+        const r = Math.round(((value >> 16) & 255) * factor);
+        const g = Math.round(((value >> 8) & 255) * factor);
+        const b = Math.round((value & 255) * factor);
+        return `rgb(${Math.min(r, 255)},${Math.min(g, 255)},${Math.min(b, 255)})`;
+      }
+
+      path(points, fill, alpha = 1) {
+        const context = this.context;
+        context.globalAlpha = alpha;
+        context.beginPath();
+        context.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) context.lineTo(points[i].x, points[i].y);
+        context.closePath();
+        context.fillStyle = fill;
+        context.fill();
+        context.globalAlpha = 1;
+      }
+
+      drawBuilding(col, row, level, geometry) {
+        const t = this.progress;
+        const footprint = this.config.footprint;
+        const inset = (1 - footprint) / 2;
+        const baseHeight = LEVEL_HEIGHTS[level] * this.config.height * this.settings.heightScale;
+        const buildingHeight = level === 0 ? 2.2 : baseHeight;
+        const isoBase = [
+          this.isoPoint(col + inset, row + inset, 0, geometry),
+          this.isoPoint(col + 1 - inset, row + inset, 0, geometry),
+          this.isoPoint(col + 1 - inset, row + 1 - inset, 0, geometry),
+          this.isoPoint(col + inset, row + 1 - inset, 0, geometry)
+        ];
+        const isoTop = isoBase.map(point => ({ x: point.x, y: point.y - buildingHeight }));
+        const flat = this.flatCorners(col, row, geometry);
+        const top = isoTop.map((point, index) => this.mixPoint(point, flat[index], t));
+        const base = isoBase.map((point, index) => this.mixPoint(point, flat[index], t));
+        const color = this.config.roof[level];
+        const sideAlpha = Math.max(0, 1 - t);
+
+        if (level > 0 || t < 0.98) {
+          this.path([top[1], top[2], base[2], base[1]], this.shade(color, this.config.sideShade), sideAlpha);
+          this.path([top[2], top[3], base[3], base[2]], this.shade(color, this.config.sideShade * 0.78), sideAlpha);
+        }
+
+        this.path(top, color);
+
+        const getsSignatureTop = level === 4 || (level === 3 && (col * 7 + row) % 4 === 0);
+        if (this.settings.buildingDetail && getsSignatureTop && t < 0.82) {
+          const styles = ['artDeco', 'angledMast', 'pyramid', 'mechanical'];
+          this.drawRoofDetail(styles[(col * 11 + row * 3) % styles.length], top, color, 1 - t);
+        }
+      }
+
+      drawRoofDetail(style, top, color, visibility) {
+        const context = this.context;
+        const center = top.reduce((sum, point) => ({ x: sum.x + point.x / 4, y: sum.y + point.y / 4 }), { x: 0, y: 0 });
+        const roofWidth = Math.max(3, Math.abs(top[1].x - top[3].x) * 0.48);
+        context.save();
+        context.globalAlpha = visibility;
+
+        if (style === 'artDeco') {
+          for (let tier = 0; tier < 3; tier++) {
+            const scale = 0.72 - tier * 0.16;
+            const lift = 3 + tier * 4;
+            const tierTop = top.map(point => ({
+              x: center.x + (point.x - center.x) * scale,
+              y: center.y + (point.y - center.y) * scale - lift
+            }));
+            const tierBase = tierTop.map(point => ({ x: point.x, y: point.y + 4 }));
+            this.path([tierTop[1], tierTop[2], tierBase[2], tierBase[1]], this.shade(color, 0.67), visibility);
+            this.path([tierTop[2], tierTop[3], tierBase[3], tierBase[2]], this.shade(color, 0.54), visibility);
+            this.path(tierTop, this.shade(color, 1.04), visibility);
+          }
+          context.globalAlpha = visibility;
+          context.strokeStyle = this.shade(color, 0.62);
+          context.lineWidth = 1.2;
+          context.beginPath();
+          context.moveTo(center.x, center.y - 11);
+          context.lineTo(center.x, center.y - 25);
+          context.stroke();
+        } else if (style === 'angledMast') {
+          const penthouse = top.map(point => ({ x: center.x + (point.x - center.x) * 0.58, y: center.y + (point.y - center.y) * 0.58 - 3 }));
+          const penthouseBase = penthouse.map(point => ({ x: point.x, y: point.y + 4 }));
+          this.path([penthouse[1], penthouse[2], penthouseBase[2], penthouseBase[1]], this.shade(color, 0.64), visibility);
+          this.path([penthouse[2], penthouse[3], penthouseBase[3], penthouseBase[2]], this.shade(color, 0.5), visibility);
+          this.path(penthouse, this.shade(color, 1.07), visibility);
+          context.globalAlpha = visibility;
+          const baseY = center.y - 5;
+          context.strokeStyle = this.shade(color, 0.56);
+          context.lineWidth = 1.15;
+          context.beginPath();
+          context.moveTo(center.x - roofWidth * 0.5, baseY);
+          context.lineTo(center.x + roofWidth * 0.1, baseY - 13);
+          context.lineTo(center.x + roofWidth * 0.38, baseY - 3);
+          context.moveTo(center.x + roofWidth * 0.1, baseY - 13);
+          context.lineTo(center.x + roofWidth * 0.1, baseY - 29);
+          context.stroke();
+        } else if (style === 'pyramid') {
+          const apex = { x: center.x, y: center.y - 18 };
+          this.path([top[0], top[1], apex], this.shade(color, 1.08), visibility);
+          this.path([top[1], top[2], apex], this.shade(color, 0.7), visibility);
+          this.path([top[2], top[3], apex], this.shade(color, 0.55), visibility);
+          context.globalAlpha = visibility;
+          context.strokeStyle = this.shade(color, 0.56);
+          context.lineWidth = 1;
+          context.beginPath();
+          context.moveTo(apex.x, apex.y);
+          context.lineTo(apex.x, apex.y - 9);
+          context.stroke();
+        } else {
+          const penthouse = top.map(point => ({ x: center.x + (point.x - center.x) * 0.64, y: center.y + (point.y - center.y) * 0.64 - 3 }));
+          const penthouseBase = penthouse.map(point => ({ x: point.x, y: point.y + 5 }));
+          this.path([penthouse[1], penthouse[2], penthouseBase[2], penthouseBase[1]], this.shade(color, 0.63), visibility);
+          this.path([penthouse[2], penthouse[3], penthouseBase[3], penthouseBase[2]], this.shade(color, 0.49), visibility);
+          this.path(penthouse, this.shade(color, 0.96), visibility);
+          context.globalAlpha = visibility;
+          context.fillStyle = this.shade(color, 0.48);
+          context.fillRect(center.x - 2.8, center.y - 10, 5.6, 2.2);
+          context.strokeStyle = this.shade(color, 0.55);
+          context.lineWidth = 0.9;
+          context.beginPath();
+          context.moveTo(center.x - roofWidth * 0.28, center.y - 6);
+          context.lineTo(center.x - roofWidth * 0.28, center.y - 17);
+          context.moveTo(center.x + roofWidth * 0.3, center.y - 5);
+          context.lineTo(center.x + roofWidth * 0.3, center.y - 13);
+          context.stroke();
+        }
+        context.restore();
+      }
+
+      draw() {
+        if (!this.context || !this.width || !this.height) return;
+        const context = this.context;
+        const geometry = this.geometry();
+        context.clearRect(0, 0, this.width, this.height);
+        context.fillStyle = this.config.bg;
+        context.fillRect(0, 0, this.width, this.height);
+
+        const all = [];
+        for (let week = 0; week < 53; week++) {
+          for (let day = 0; day < 7; day++) all.push({ week, day, level: CONTRIBUTIONS[week][day] });
+        }
+        all.sort((a, b) => (a.week + a.day) - (b.week + b.day));
+        for (const cell of all) this.drawBuilding(cell.week, cell.day, cell.level, geometry);
+
+        if (this.progress > 0.7) this.drawLabels(geometry, (this.progress - 0.7) / 0.3);
+      }
+
+      drawLabels(geometry, alpha) {
+        const context = this.context;
+        context.fillStyle = this.config.muted;
+        context.globalAlpha = alpha;
+        context.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
+        const months = [['Oct', 0], ['Nov', 5], ['Dec', 9], ['Jan', 14], ['Feb', 18], ['Mar', 22], ['Apr', 27], ['May', 31], ['Jun', 36], ['Jul', 40], ['Aug', 45], ['Sep', 49]];
+        for (const [label, week] of months) context.fillText(label, geometry.flatLeft + week * geometry.flatCell, geometry.flatTop - 10);
+        if (!geometry.compact) {
+          context.fillText('Mon', geometry.flatLeft - 30, geometry.flatTop + geometry.flatCell * 2 - 1);
+          context.fillText('Wed', geometry.flatLeft - 30, geometry.flatTop + geometry.flatCell * 4 - 1);
+          context.fillText('Fri', geometry.flatLeft - 30, geometry.flatTop + geometry.flatCell * 6 - 1);
+        }
+        context.globalAlpha = 1;
+      }
+
+      updateTooltip(event) {
+        if (this.progress < 0.92) { this.tooltip.style.opacity = 0; return; }
+        const geometry = this.geometry();
+        const rect = this.shell.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const week = Math.floor((x - geometry.flatLeft) / geometry.flatCell);
+        const day = Math.floor((y - geometry.flatTop) / geometry.flatCell);
+        if (week < 0 || week > 52 || day < 0 || day > 6) { this.tooltip.style.opacity = 0; return; }
+        const level = CONTRIBUTIONS[week][day];
+        const counts = [0, 2, 7, 15, 31];
+        const date = new Date(2025, 8, 28 + week * 7 + day);
+        this.tooltip.textContent = `${counts[level]} contributions · ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        this.tooltip.style.left = `${x}px`;
+        this.tooltip.style.top = `${y}px`;
+        this.tooltip.style.opacity = 1;
+      }
+    }
+
+    customElements.define('github-skyline', GitHubSkyline);
+
+    function page() {
+      return `<div class="prototype-page">
+        <header class="prototype-header"><span class="prototype-mark">SUNNY / ENGINEER</span><span class="prototype-meta">Selected work · 2026</span></header>
+        <div class="prototype-main">
+          <div class="prototype-copy"><p class="prototype-kicker">Open-source activity</p><h1>A year built in public.</h1><p>Every day becomes one building. Height tracks contribution intensity. Hover the skyline to return to the familiar GitHub graph.</p></div>
+          <github-skyline></github-skyline>
+        </div>
+      </div>`;
+    }
+    document.getElementById('stage').innerHTML = page();
+  </script>
+</body>
+</html>

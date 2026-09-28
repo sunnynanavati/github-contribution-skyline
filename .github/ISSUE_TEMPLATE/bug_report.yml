@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible component problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include expected and actual behavior.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Package version
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction
+      description: Provide a minimal repository, sandbox, or code sample.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Browser, operating system, framework, and assistive technology when relevant.
+    validations:
+      required: true

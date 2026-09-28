@@ -1,0 +1,350 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #080909;
+  color: #eceeed;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: #080909;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.demo-page {
+  min-height: 100dvh;
+  padding: 12px;
+}
+
+.component-stage {
+  position: relative;
+  min-height: calc(100dvh - 24px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #1d1f1e;
+  border-radius: 34px;
+  background: #111212;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .018);
+}
+
+.stage-actions {
+  position: absolute;
+  z-index: 5;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: stretch;
+  min-height: 54px;
+  overflow: hidden;
+  border: 1px solid #2b2d2c;
+  border-radius: 18px;
+  background: #191a1a;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .03);
+}
+
+.stage-actions button {
+  min-width: 52px;
+  border: 0;
+  border-left: 1px solid #2b2d2c;
+  background: transparent;
+  color: #b8bcba;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out, transform 150ms ease-out;
+}
+
+.stage-actions button:first-child {
+  border-left: 0;
+}
+
+.stage-actions button:hover,
+.stage-actions button[aria-expanded='true'] {
+  background: #242625;
+  color: #f3f4f3;
+}
+
+.stage-actions button:active {
+  transform: scale(.97);
+}
+
+.stage-actions button:focus-visible,
+.palette-tray button:focus-visible,
+.command-row button:focus-visible,
+.stage-panel a:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #ff5c64;
+  outline-offset: -3px;
+}
+
+.install-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 17px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.icon-trigger {
+  display: grid;
+  place-items: center;
+}
+
+.component-preview {
+  width: min(1120px, calc(100% - 120px));
+}
+
+.component-preview [data-github-skyline] {
+  --gcs-min-height: clamp(420px, 48vw, 620px);
+  --gcs-radius: 18px;
+  --gcs-shadow: 0 34px 90px rgb(0 0 0 / .34);
+}
+
+.stage-panel {
+  position: absolute;
+  z-index: 4;
+  top: 96px;
+  right: 24px;
+  width: min(430px, calc(100% - 48px));
+  padding: 24px;
+  border: 1px solid #2c2e2d;
+  border-radius: 18px;
+  background: rgb(25 26 26 / .96);
+  box-shadow: 0 24px 70px rgb(0 0 0 / .42), inset 0 1px 0 rgb(255 255 255 / .035);
+  backdrop-filter: blur(18px);
+  animation: panel-in 180ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.panel-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #a7aca9;
+  font: 700 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.stage-panel h1 {
+  margin: 0 0 10px;
+  font-size: 23px;
+  line-height: 1.1;
+  letter-spacing: -.025em;
+}
+
+.stage-panel p {
+  margin: 0 0 20px;
+  color: #aeb3b0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.stage-panel a {
+  color: #f0f2f1;
+  font-size: 14px;
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+
+.stage-panel pre {
+  max-width: 100%;
+  margin: 16px 0 0;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid #303332;
+  border-radius: 12px;
+  background: #101111;
+  color: #dde1de;
+  font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid #303332;
+  border-radius: 12px;
+  background: #101111;
+}
+
+.command-row code {
+  min-width: 0;
+  overflow: hidden;
+  color: #dde1de;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-row button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid #343735;
+  border-radius: 9px;
+  background: #222423;
+  color: #f0f2f1;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.palette-tray {
+  position: absolute;
+  z-index: 3;
+  bottom: 26px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid #303231;
+  border-radius: 17px;
+  background: #191a1a;
+  box-shadow: 0 12px 34px rgb(0 0 0 / .28), inset 0 1px 0 rgb(255 255 255 / .035);
+  transform: translateX(-50%);
+}
+
+.palette-tray button {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out;
+}
+
+.palette-tray button:hover {
+  background: #242625;
+}
+
+.palette-tray button:active {
+  transform: scale(.94);
+}
+
+.palette-tray button[aria-pressed='true'] {
+  border-color: #555a57;
+  background: #242625;
+}
+
+.palette-tray button span {
+  width: 25px;
+  height: 25px;
+  display: block;
+  border: 1px solid rgb(255 255 255 / .16);
+  border-radius: 7px;
+  background: var(--swatch-color);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16);
+}
+
+@keyframes panel-in {
+  from {
+    transform: translateY(-6px) scale(.985);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .demo-page {
+    padding: 6px;
+  }
+
+  .component-stage {
+    min-height: calc(100dvh - 12px);
+    border-radius: 24px;
+  }
+
+  .stage-actions {
+    top: 14px;
+    right: 14px;
+    min-height: 48px;
+    border-radius: 15px;
+  }
+
+  .stage-actions button {
+    min-width: 46px;
+  }
+
+  .install-trigger {
+    padding: 0 13px;
+    font-size: 14px;
+  }
+
+  .component-preview {
+    width: calc(100% - 24px);
+  }
+
+  .component-preview [data-github-skyline] {
+    --gcs-min-height: min(520px, 62dvh);
+    --gcs-radius: 14px;
+  }
+
+  .stage-panel {
+    top: 74px;
+    right: 14px;
+    width: calc(100% - 28px);
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .palette-tray {
+    bottom: 16px;
+    gap: 3px;
+    padding: 7px;
+    border-radius: 15px;
+  }
+
+  .palette-tray button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .palette-tray button span {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 390px) {
+  .palette-tray button {
+    width: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-actions button,
+  .palette-tray button {
+    transition: none;
+  }
+
+  .stage-panel {
+    animation: none;
+  }
+}
