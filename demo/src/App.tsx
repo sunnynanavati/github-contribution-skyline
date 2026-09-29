@@ -97,6 +97,7 @@ export function App() {
             heightScale={1}
             buildingDetail
             variant="card"
+            graphExpansion="overlay"
             showControls={false}
             ariaLabel="Sunny's GitHub contribution skyline"
           />

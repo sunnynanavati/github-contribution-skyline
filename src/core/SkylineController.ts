@@ -29,6 +29,7 @@ function resolveOptions(input: SkylineOptions): ResolvedSkylineOptions {
     heightScale: Math.max(0.4, Math.min(2, input.heightScale ?? 1)),
     buildingDetail: input.buildingDetail ?? true,
     variant: input.variant === 'card' ? 'card' : 'bare',
+    graphExpansion: input.graphExpansion === 'overlay' ? 'overlay' : 'inline',
     flattenMode: input.flattenMode ?? 'auto',
     initialView: input.flattenMode === 'always' ? 'graph' : input.flattenMode === 'never' ? 'skyline' : (input.initialView ?? 'skyline'),
     showControls: input.showControls ?? true,
@@ -194,6 +195,7 @@ class SkylineControllerImpl implements SkylineController {
     this.intersectionObserver?.disconnect();
     this.renderer?.destroy();
     this.renderer = null;
+    this.host.removeAttribute('data-gcs-overlay');
     this.shadow.replaceChildren();
   }
 
@@ -246,6 +248,7 @@ class SkylineControllerImpl implements SkylineController {
     this.shell.setAttribute('aria-label', this.options.ariaLabel);
     this.shell.setAttribute('aria-describedby', this.liveRegion.id);
     const bare = this.options.variant === 'bare';
+    if (this.options.graphExpansion !== 'overlay') this.setOverlayExpanded(false);
     this.detailsButton.hidden = bare || !this.options.showControls;
     this.legend.hidden = bare || !this.options.showLegend;
     if (bare && this.settingsOpen) {
@@ -292,6 +295,7 @@ class SkylineControllerImpl implements SkylineController {
         onViewChange: (view) => this.handleViewChange(view),
       });
       this.updateHint(this.options.initialView);
+      if (this.options.initialView === 'graph') this.setOverlayExpanded(true);
       if (typeof IntersectionObserver !== 'undefined') {
         this.intersectionObserver?.disconnect();
         this.intersectionObserver = new IntersectionObserver(([entry]) => this.renderer?.setActive(Boolean(entry?.isIntersecting)), { threshold: 0.01 });
@@ -464,6 +468,11 @@ class SkylineControllerImpl implements SkylineController {
       this.toggleSettings(false);
       return;
     }
+    if (event.key === 'Escape' && this.host.hasAttribute('data-gcs-overlay')) {
+      event.preventDefault();
+      this.setView('skyline');
+      return;
+    }
     if ((event.key === 'Enter' || event.key === ' ') && !this.settingsOpen && (this.options.flattenMode === 'auto' || this.options.flattenMode === 'press')) {
       event.preventDefault();
       this.setView(this.getView() === 'graph' ? 'skyline' : 'graph');
@@ -521,8 +530,16 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   private handleViewChange(view: SkylineView): void {
+    this.setOverlayExpanded(view === 'graph');
     this.updateHint(view);
     this.options.onViewChange?.(view);
+  }
+
+  private setOverlayExpanded(expanded: boolean): void {
+    const next = expanded && this.options.graphExpansion === 'overlay';
+    if (this.host.hasAttribute('data-gcs-overlay') === next) return;
+    this.host.toggleAttribute('data-gcs-overlay', next);
+    this.renderer?.refreshLayout();
   }
 
   private updateHint(view: SkylineView): void {

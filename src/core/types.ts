@@ -10,6 +10,7 @@ export type SkylinePaletteName = 'green' | 'red' | 'mono' | 'orange' | 'blue' | 
 export type SkylineView = 'skyline' | 'graph';
 export type FlattenMode = 'auto' | 'hover' | 'press' | 'always' | 'never';
 export type SkylineVariant = 'bare' | 'card';
+export type GraphExpansion = 'inline' | 'overlay';
 export type SkylineStatus = 'ready' | 'loading' | 'error';
 
 export interface CustomSkylinePalette {
@@ -60,6 +61,7 @@ export interface SkylineOptions {
   heightScale?: number;
   buildingDetail?: boolean;
   variant?: SkylineVariant;
+  graphExpansion?: GraphExpansion;
   flattenMode?: FlattenMode;
   initialView?: SkylineView;
   showControls?: boolean;
@@ -86,6 +88,7 @@ export interface ResolvedSkylineOptions extends Omit<SkylineOptions, 'palette'> 
   heightScale: number;
   buildingDetail: boolean;
   variant: SkylineVariant;
+  graphExpansion: GraphExpansion;
   flattenMode: FlattenMode;
   initialView: SkylineView;
   showControls: boolean;

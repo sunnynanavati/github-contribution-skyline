@@ -15,6 +15,16 @@ export const SKYLINE_STYLES: string = `
     color: var(--gcs-ink);
     font-family: var(--gcs-font-family);
   }
+  :host([data-gcs-overlay]) {
+    position: fixed !important;
+    z-index: 2147483000 !important;
+    inset: clamp(16px, 4vw, 56px) !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+  }
   * { box-sizing: border-box; }
   button, input { font: inherit; }
   .shell {
@@ -44,6 +54,16 @@ export const SKYLINE_STYLES: string = `
   .shell[data-variant='bare'] .settings-panel,
   .shell[data-variant='bare'] .legend { display: none; }
   .shell[data-variant='bare'] .state { background: transparent; }
+  :host([data-gcs-overlay]) .shell {
+    height: 100%;
+    min-height: 0;
+    border: 1px solid #353a37;
+    border-radius: 22px;
+    background: rgb(15 17 16 / .96);
+    box-shadow: 0 0 0 100vmax rgb(3 5 4 / .72), 0 34px 100px rgb(0 0 0 / .5);
+    backdrop-filter: blur(18px);
+    animation: gcs-overlay-in 220ms cubic-bezier(.2, .8, .2, 1) both;
+  }
   canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: manipulation; }
   .topline {
     position: absolute; z-index: 2; inset: 18px 20px auto;
@@ -154,5 +174,10 @@ export const SKYLINE_STYLES: string = `
   }
   @media (prefers-reduced-motion: reduce) {
     .settings-panel, .details-toggle, .palette-button, .track, .track::after, .tooltip { transition: none; }
+    :host([data-gcs-overlay]) .shell { animation: none; }
+  }
+  @keyframes gcs-overlay-in {
+    from { opacity: .75; transform: scale(.985); }
+    to { opacity: 1; transform: scale(1); }
   }
 `;

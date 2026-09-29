@@ -2,6 +2,7 @@ import { createSkyline } from '../core/SkylineController';
 import type {
   ContributionDay,
   FlattenMode,
+  GraphExpansion,
   SkylineController,
   SkylineOptions,
   SkylinePaletteName,
@@ -10,7 +11,7 @@ import type {
 } from '../core/types';
 
 export class GitHubSkylineElement extends HTMLElement {
-  static observedAttributes = ['username', 'palette', 'height-scale', 'building-detail', 'variant', 'flatten-mode', 'show-controls', 'show-legend', 'show-labels', 'week-starts-on', 'aria-label'];
+  static observedAttributes = ['username', 'palette', 'height-scale', 'building-detail', 'variant', 'graph-expansion', 'flatten-mode', 'show-controls', 'show-legend', 'show-labels', 'week-starts-on', 'aria-label'];
 
   private controller: SkylineController | null = null;
   private _contributions: ContributionDay[] = [];
@@ -47,6 +48,7 @@ export class GitHubSkylineElement extends HTMLElement {
       heightScale: this.hasAttribute('height-scale') ? Number(this.getAttribute('height-scale')) : undefined,
       buildingDetail: booleanAttribute('building-detail', true),
       variant: (this.getAttribute('variant') as SkylineVariant | null) ?? undefined,
+      graphExpansion: (this.getAttribute('graph-expansion') as GraphExpansion | null) ?? undefined,
       flattenMode: (this.getAttribute('flatten-mode') as FlattenMode | null) ?? undefined,
       showControls: booleanAttribute('show-controls', true),
       showLegend: booleanAttribute('show-legend', true),

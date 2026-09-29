@@ -40,6 +40,22 @@ describe('skyline controller', () => {
     controller.destroy();
   });
 
+  it('expands only after the graph settles and restores after returning to skyline', () => {
+    const host = document.createElement('div');
+    const controller = createSkyline(host, {
+      contributions: [{ date: '2026-09-26', count: 7 }],
+      graphExpansion: 'overlay',
+      reducedMotion: true,
+    });
+
+    expect(host.hasAttribute('data-gcs-overlay')).toBe(false);
+    controller.setView('graph');
+    expect(host.hasAttribute('data-gcs-overlay')).toBe(true);
+    controller.setView('skyline');
+    expect(host.hasAttribute('data-gcs-overlay')).toBe(false);
+    controller.destroy();
+  });
+
   it('supports palette controls, settings focus, and Escape', () => {
     const host = document.createElement('div');
     const onPaletteChange = vi.fn();

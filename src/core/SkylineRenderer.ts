@@ -99,6 +99,8 @@ export class SkylineRenderer {
   getView(): SkylineView { return this.target === 1 ? 'graph' : 'skyline'; }
   isAnimating(): boolean { return this.raf !== null; }
 
+  refreshLayout(): void { this.resize(); }
+
   setActive(active: boolean): void {
     this.active = active && document.visibilityState !== 'hidden';
     if (!this.active) this.cancelFrame();
