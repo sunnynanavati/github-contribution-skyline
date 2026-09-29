@@ -8,6 +8,7 @@ export interface SkylineRendererOptions {
   palette: CustomSkylinePalette;
   heightScale: number;
   buildingDetail: boolean;
+  transparentBackground: boolean;
   showLabels: boolean;
   maxDevicePixelRatio: number;
   initialView: SkylineView;
@@ -21,6 +22,7 @@ export class SkylineRenderer {
   private palette: CustomSkylinePalette;
   private heightScale: number;
   private buildingDetail: boolean;
+  private transparentBackground: boolean;
   private showLabels: boolean;
   private maxDevicePixelRatio: number;
   private reducedMotion: boolean;
@@ -51,6 +53,7 @@ export class SkylineRenderer {
     this.palette = options.palette;
     this.heightScale = options.heightScale;
     this.buildingDetail = options.buildingDetail;
+    this.transparentBackground = options.transparentBackground;
     this.showLabels = options.showLabels;
     this.maxDevicePixelRatio = options.maxDevicePixelRatio;
     this.reducedMotion = options.reducedMotion;
@@ -70,6 +73,7 @@ export class SkylineRenderer {
     if (options.palette) this.palette = options.palette;
     if (options.heightScale !== undefined) this.heightScale = clamp(options.heightScale, 0.4, 2);
     if (options.buildingDetail !== undefined) this.buildingDetail = options.buildingDetail;
+    if (options.transparentBackground !== undefined) this.transparentBackground = options.transparentBackground;
     if (options.showLabels !== undefined) this.showLabels = options.showLabels;
     if (options.maxDevicePixelRatio !== undefined) this.maxDevicePixelRatio = clamp(options.maxDevicePixelRatio, 1, 4);
     if (options.reducedMotion !== undefined) this.reducedMotion = options.reducedMotion;
@@ -175,9 +179,11 @@ export class SkylineRenderer {
     if (!this.width || !this.height) return;
     const context = this.context;
     context.clearRect(0, 0, this.width, this.height);
-    context.fillStyle = this.palette.surface;
-    context.fillRect(0, 0, this.width, this.height);
-    if (this.palette.texture === 'diagonal') this.drawTexture();
+    if (!this.transparentBackground) {
+      context.fillStyle = this.palette.surface;
+      context.fillRect(0, 0, this.width, this.height);
+      if (this.palette.texture === 'diagonal') this.drawTexture();
+    }
     for (const day of this.sortedDays) {
       drawBuilding(context, day, {
         progress: this.progress,

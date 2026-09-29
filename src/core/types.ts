@@ -9,6 +9,7 @@ export interface ContributionDay {
 export type SkylinePaletteName = 'green' | 'red' | 'mono' | 'orange' | 'blue' | 'yellow';
 export type SkylineView = 'skyline' | 'graph';
 export type FlattenMode = 'auto' | 'hover' | 'press' | 'always' | 'never';
+export type SkylineVariant = 'bare' | 'card';
 export type SkylineStatus = 'ready' | 'loading' | 'error';
 
 export interface CustomSkylinePalette {
@@ -58,6 +59,7 @@ export interface SkylineOptions {
   palette?: SkylinePaletteName | CustomSkylinePalette;
   heightScale?: number;
   buildingDetail?: boolean;
+  variant?: SkylineVariant;
   flattenMode?: FlattenMode;
   initialView?: SkylineView;
   showControls?: boolean;
@@ -83,6 +85,7 @@ export interface ResolvedSkylineOptions extends Omit<SkylineOptions, 'palette'> 
   palette: CustomSkylinePalette;
   heightScale: number;
   buildingDetail: boolean;
+  variant: SkylineVariant;
   flattenMode: FlattenMode;
   initialView: SkylineView;
   showControls: boolean;

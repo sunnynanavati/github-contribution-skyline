@@ -28,6 +28,7 @@ function resolveOptions(input: SkylineOptions): ResolvedSkylineOptions {
     palette: resolvePalette(input.palette),
     heightScale: Math.max(0.4, Math.min(2, input.heightScale ?? 1)),
     buildingDetail: input.buildingDetail ?? true,
+    variant: input.variant === 'card' ? 'card' : 'bare',
     flattenMode: input.flattenMode ?? 'auto',
     initialView: input.flattenMode === 'always' ? 'graph' : input.flattenMode === 'never' ? 'skyline' : (input.initialView ?? 'skyline'),
     showControls: input.showControls ?? true,
@@ -241,10 +242,19 @@ class SkylineControllerImpl implements SkylineController {
     this.renderTable();
     this.syncControls();
     this.updateIdentity();
+    this.shell.dataset.variant = this.options.variant;
     this.shell.setAttribute('aria-label', this.options.ariaLabel);
     this.shell.setAttribute('aria-describedby', this.liveRegion.id);
-    this.detailsButton.hidden = !this.options.showControls;
-    this.legend.hidden = !this.options.showLegend;
+    const bare = this.options.variant === 'bare';
+    this.detailsButton.hidden = bare || !this.options.showControls;
+    this.legend.hidden = bare || !this.options.showLegend;
+    if (bare && this.settingsOpen) {
+      this.settingsOpen = false;
+      this.panel.removeAttribute('data-open');
+      this.panel.setAttribute('aria-hidden', 'true');
+      this.panel.inert = true;
+      this.detailsButton.setAttribute('aria-expanded', 'false');
+    }
 
     const state = invalidMessage ? 'invalid' : this.options.status === 'loading' ? 'loading' : this.options.status === 'error' ? 'error' : this.grid.days.length ? 'ready' : 'empty';
     this.renderState(state, invalidMessage);
@@ -259,6 +269,7 @@ class SkylineControllerImpl implements SkylineController {
       palette: this.options.palette,
       heightScale: this.options.heightScale,
       buildingDetail: this.options.buildingDetail,
+      transparentBackground: bare,
       showLabels: this.options.showLabels,
       maxDevicePixelRatio: this.options.maxDevicePixelRatio,
       reducedMotion: this.options.reducedMotion,
@@ -273,6 +284,7 @@ class SkylineControllerImpl implements SkylineController {
         palette: this.options.palette,
         heightScale: this.options.heightScale,
         buildingDetail: this.options.buildingDetail,
+        transparentBackground: this.options.variant === 'bare',
         showLabels: this.options.showLabels,
         maxDevicePixelRatio: this.options.maxDevicePixelRatio,
         initialView: this.options.initialView,

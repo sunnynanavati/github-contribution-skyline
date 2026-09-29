@@ -19,6 +19,27 @@ describe('skyline controller', () => {
     controller.destroy();
   });
 
+  it('defaults to a bare transparent presentation and can switch to the complete card', () => {
+    const host = document.createElement('div');
+    const controller = createSkyline(host, {
+      contributions: [{ date: '2026-09-26', count: 7 }],
+      reducedMotion: true,
+    });
+    const shell = host.shadowRoot!.querySelector<HTMLElement>('.shell')!;
+    const details = host.shadowRoot!.querySelector<HTMLButtonElement>('.details-toggle')!;
+    const legend = host.shadowRoot!.querySelector<HTMLElement>('.legend')!;
+
+    expect(shell.dataset.variant).toBe('bare');
+    expect(details.hidden).toBe(true);
+    expect(legend.hidden).toBe(true);
+
+    controller.update({ variant: 'card' });
+    expect(shell.dataset.variant).toBe('card');
+    expect(details.hidden).toBe(false);
+    expect(legend.hidden).toBe(false);
+    controller.destroy();
+  });
+
   it('supports palette controls, settings focus, and Escape', () => {
     const host = document.createElement('div');
     const onPaletteChange = vi.fn();

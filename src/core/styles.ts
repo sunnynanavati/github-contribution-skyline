@@ -28,6 +28,22 @@ export const SKYLINE_STYLES: string = `
     outline: none;
   }
   .shell:focus-visible { box-shadow: 0 0 0 3px var(--gcs-focus), 0 22px 64px rgb(28 34 30 / .12); }
+  .shell[data-variant='bare'] {
+    border-color: transparent;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .shell[data-variant='bare']:focus-visible {
+    outline: 2px solid var(--gcs-focus);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+  .shell[data-variant='bare'] .topline,
+  .shell[data-variant='bare'] .details-toggle,
+  .shell[data-variant='bare'] .settings-panel,
+  .shell[data-variant='bare'] .legend { display: none; }
+  .shell[data-variant='bare'] .state { background: transparent; }
   canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: manipulation; }
   .topline {
     position: absolute; z-index: 2; inset: 18px 20px auto;

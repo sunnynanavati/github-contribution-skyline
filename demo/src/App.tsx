@@ -96,6 +96,7 @@ export function App() {
             palette={displayPalette}
             heightScale={1}
             buildingDetail
+            variant="card"
             showControls={false}
             ariaLabel="Sunny's GitHub contribution skyline"
           />

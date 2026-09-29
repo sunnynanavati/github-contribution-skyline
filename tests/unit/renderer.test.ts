@@ -3,10 +3,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { normalizeContributions } from '../../src/core/data';
 import { SKYLINE_PALETTES } from '../../src/core/palettes';
 import { SkylineRenderer } from '../../src/core/SkylineRenderer';
-import { installDomMocks } from './setup';
+import { context2d, installDomMocks } from './setup';
 
 describe('renderer lifecycle', () => {
   beforeEach(() => installDomMocks());
+
+  it('leaves the Canvas transparent for bare embeds', () => {
+    const fillRect = vi.mocked(context2d.fillRect);
+    fillRect.mockClear();
+    const canvas = document.createElement('canvas');
+    const container = document.createElement('div');
+    const renderer = new SkylineRenderer(canvas, container, {
+      grid: normalizeContributions([{ date: '2026-09-26', count: 5 }]),
+      palette: SKYLINE_PALETTES.red,
+      heightScale: 1,
+      buildingDetail: true,
+      transparentBackground: true,
+      showLabels: true,
+      maxDevicePixelRatio: 2,
+      initialView: 'skyline',
+      reducedMotion: true,
+    });
+
+    expect(fillRect).not.toHaveBeenCalled();
+    renderer.destroy();
+  });
 
   it('stops requesting frames after a transition settles', () => {
     let nextId = 1;
@@ -25,6 +46,7 @@ describe('renderer lifecycle', () => {
       palette: SKYLINE_PALETTES.green,
       heightScale: 1,
       buildingDetail: true,
+      transparentBackground: false,
       showLabels: true,
       maxDevicePixelRatio: 2,
       initialView: 'skyline',

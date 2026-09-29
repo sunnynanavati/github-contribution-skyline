@@ -126,6 +126,7 @@ Pass the serialized `contributions` result to the client component. Private cont
 | `palette` | palette name or custom palette | `green` | Complete semantic color theme |
 | `heightScale` | `number` | `1` | Height multiplier, clamped to `0.4-2` |
 | `buildingDetail` | `boolean` | `true` | Enables sparse architectural roof details on selected high-rises |
+| `variant` | `bare`, `card` | `bare` | Transparent skyline-only embed or complete themed card |
 | `flattenMode` | `auto`, `hover`, `press`, `always`, `never` | `auto` | Input behavior for changing views |
 | `initialView` | `skyline`, `graph` | `skyline` | Initial renderer view |
 | `showControls` | `boolean` | `true` | Displays the Details panel |
@@ -172,6 +173,25 @@ Advanced layout variables can be set on the host:
 
 Internal DOM structure is not a theming API.
 
+### Bare and card presentation
+
+The default `bare` variant renders only the interactive skyline on a transparent Canvas. It keeps the semantic contribution table, keyboard behavior, tooltips, and reduced-motion support without imposing a card background or visible component chrome.
+
+```tsx
+<GitHubSkyline contributions={contributions} palette="red" />
+```
+
+Use `card` when you want the self-contained surface with identity text, flatten hint, optional Details panel, and legend:
+
+```tsx
+<GitHubSkyline
+  contributions={contributions}
+  username="sunny"
+  palette="red"
+  variant="card"
+/>
+```
+
 ## Custom element
 
 ```ts
@@ -181,6 +201,7 @@ defineGitHubSkyline();
 const skyline = document.querySelector('github-contribution-skyline');
 skyline.contributions = days;
 skyline.setAttribute('palette', 'blue');
+skyline.setAttribute('variant', 'card');
 ```
 
 The element emits `day-hover`, `day-select`, `view-change`, and `palette-change` custom events.
