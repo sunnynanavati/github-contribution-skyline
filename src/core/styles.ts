@@ -124,8 +124,8 @@ export const SKYLINE_STYLES: string = `
     position: absolute; z-index: 4; opacity: 0; pointer-events: none;
     max-width: calc(100% - 20px); padding: 8px 10px; border: 1px solid var(--gcs-border); border-radius: 8px;
     background: var(--gcs-elevated); color: var(--gcs-ink); box-shadow: 0 8px 28px rgb(0 0 0 / .22);
-    transform: translate(-50%, -115%); font: 600 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
-    transition: opacity 120ms ease-out; white-space: nowrap;
+    font: 600 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+    transition: opacity 120ms ease-out; white-space: normal; overflow-wrap: anywhere;
   }
   .state {
     position: absolute; z-index: 3; inset: 0; display: grid; place-content: center; gap: 8px;

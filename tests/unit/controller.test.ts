@@ -1,10 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createSkyline } from '../../src/core/SkylineController';
+import { SkylineRenderer } from '../../src/core/SkylineRenderer';
 import { installDomMocks } from './setup';
 
 describe('skyline controller', () => {
   beforeEach(() => installDomMocks());
+
+  it('does not select a day on flatten, but preserves arrow-key navigation', () => {
+    const selection = vi.spyOn(SkylineRenderer.prototype, 'setSelectedDate');
+    const host = document.createElement('div');
+    const controller = createSkyline(host, {
+      contributions: [{ date: '2026-09-26', count: 7 }],
+      reducedMotion: true,
+    });
+    controller.setView('graph');
+    expect(selection).not.toHaveBeenCalled();
+    host.shadowRoot!.querySelector('.shell')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(selection).toHaveBeenCalledWith(expect.any(String));
+    controller.setView('skyline');
+    expect(selection).toHaveBeenLastCalledWith(null);
+    selection.mockClear();
+    controller.setView('graph');
+    expect(selection).not.toHaveBeenCalled();
+    controller.destroy();
+    selection.mockRestore();
+  });
 
   it('renders semantic data and accessible controls', () => {
     const host = document.createElement('div');

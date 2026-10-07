@@ -180,9 +180,12 @@ class SkylineControllerImpl implements SkylineController {
   setView(view: SkylineView, immediate = false): void {
     if (this.options.flattenMode === 'always' && view !== 'graph') return;
     if (this.options.flattenMode === 'never' && view !== 'skyline') return;
+    if (view === 'skyline') {
+      this.selectedIndex = -1;
+      this.renderer?.setSelectedDate(null);
+    }
     this.renderer?.setView(view, immediate);
     this.updateHint(view);
-    if (view === 'graph' && this.selectedIndex < 0 && this.grid.days.length) this.selectIndex(0, false);
   }
 
   getView(): SkylineView { return this.renderer?.getView() ?? this.options.initialView; }
@@ -439,8 +442,13 @@ class SkylineControllerImpl implements SkylineController {
     const day = this.renderer.hitTest(event.clientX - rect.left, event.clientY - rect.top);
     this.options.onDayHover?.(day ? { date: day.date, count: day.count, level: day.level } : null);
     if (!day) { this.hideTooltip(); return; }
-    const position = clampTooltipPosition(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height);
     this.tooltip.textContent = this.dayLabel(day);
+    const position = clampTooltipPosition(
+      (event.clientX - rect.left) * this.shell.offsetWidth / rect.width - this.shell.clientLeft,
+      (event.clientY - rect.top) * this.shell.offsetHeight / rect.height - this.shell.clientTop,
+      this.shell.clientWidth, this.shell.clientHeight,
+      this.tooltip.offsetWidth, this.tooltip.offsetHeight,
+    );
     this.tooltip.style.left = `${position.x}px`;
     this.tooltip.style.top = `${position.y}px`;
     this.tooltip.style.opacity = '1';
