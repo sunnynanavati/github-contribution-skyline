@@ -1,4 +1,4 @@
-import { calculateBuildingHeight, drawBuilding } from '../../../src/core/buildings';
+import { calculateBuildingHeight, drawBuilding, maximumContributionCount } from '../../../src/core/buildings';
 import { type Point, type SkylineGeometry } from '../../../src/core/geometry';
 import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade, type RoofStyle } from '../../../src/core/roof-details';
 import { SplatMorph } from '../../../src/core/SplatMorph';
@@ -23,6 +23,7 @@ export class BloomScene {
   private readonly detailTop = quad();
   private readonly face = quad();
   private readonly baseline: SplatMorph;
+  private readonly maxCount: number;
   private readonly compareDepth = (a: number, b: number) => this.depths[a]! - this.depths[b]! || a - b;
 
   constructor(
@@ -33,6 +34,7 @@ export class BloomScene {
     private readonly buildingDetail: boolean,
   ) {
     const count = grid.days.length;
+    this.maxCount = maximumContributionCount(grid.days);
     this.positions = new Float64Array(count * 2);
     this.heights = new Float64Array(count);
     this.distances = new Float64Array(count);
@@ -42,7 +44,7 @@ export class BloomScene {
     grid.days.forEach((day, index) => {
       this.positions[index * 2] = day.weekIndex + 0.5 - grid.weeks / 2;
       this.positions[index * 2 + 1] = day.weekday - 3;
-      this.heights[index] = calculateBuildingHeight(day.level, heightScale, geometry.compact);
+      this.heights[index] = calculateBuildingHeight(day.count, this.maxCount, heightScale, geometry.compact);
       this.distances[index] = radialDistance(day.weekIndex, day.weekday, grid.weeks);
       const color = palette.levels[day.level];
       this.colors.push(color);
@@ -61,7 +63,7 @@ export class BloomScene {
         });
         for (const index of this.order) drawBuilding(context, this.grid.days[index]!, {
           progress: time <= 0 ? 0 : 1, heightScale: this.heightScale,
-          buildingDetail: this.buildingDetail, palette: this.palette, geometry: this.geometry,
+          buildingDetail: this.buildingDetail, palette: this.palette, geometry: this.geometry, maxCount: this.maxCount,
         });
       }
       return;

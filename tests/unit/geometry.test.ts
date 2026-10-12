@@ -27,8 +27,8 @@ describe('geometry and animation', () => {
   });
 
   it('scales building heights and clamps tooltips inside the surface', () => {
-    expect(calculateBuildingHeight(4, 1.4, false)).toBeCloseTo(109.2);
-    expect(calculateBuildingHeight(0, 2, false)).toBe(2.2);
+    expect(calculateBuildingHeight(15, 15, 1.4, false)).toBeCloseTo(109.2);
+    expect(calculateBuildingHeight(0, 15, 2, false)).toBe(2.2);
     expect(clampTooltipPosition(-20, 900, 500, 420)).toEqual({ x: 10, y: 370 });
     expect(clampTooltipPosition(490, 200, 500, 420, 280, 40)).toEqual({ x: 210, y: 148 });
     expect(clampTooltipPosition(20, 15, 500, 420, 280, 40)).toEqual({ x: 10, y: 27 });

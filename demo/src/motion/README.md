@@ -49,6 +49,12 @@ Use **Dense / equal heights** to compare the collapse front without differing
 contribution heights obscuring it. **Inspect keyframes** shows matched samples.
 All controls and the comparison page are excluded from the library build.
 
+All render paths share continuous count-based building heights. The largest daily
+count reaches the existing maximum height, while the remaining positive counts
+interpolate from a readable minimum (12% of the maximum). Contribution levels
+still select colors; they do not quantize heights. Zero days remain 2.2px tiles.
+The maximum count is computed when the data changes, outside animation loops.
+
 ## Review criteria
 
 Throughout 180–270ms of playback the center must be flat while the outside retains height. B should

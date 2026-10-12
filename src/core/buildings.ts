@@ -1,8 +1,8 @@
 import { flatCorners, isoPoint, mixPoint, type SkylineGeometry, type Point } from './geometry';
 import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade } from './roof-details';
-import type { CustomSkylinePalette, NormalizedContributionDay } from './types';
+import type { ContributionDay, CustomSkylinePalette, NormalizedContributionDay } from './types';
 
-const LEVEL_HEIGHTS = [0.04, 0.22, 0.46, 0.73, 1] as const;
+const EMPTY_HEIGHT = 2.2;
 
 export interface BuildingRenderOptions {
   progress: number;
@@ -10,14 +10,25 @@ export interface BuildingRenderOptions {
   buildingDetail: boolean;
   palette: CustomSkylinePalette;
   geometry: SkylineGeometry;
+  maxCount: number;
   splash?: boolean;
   weeks?: number;
 }
 
-export function calculateBuildingHeight(level: number, heightScale: number, compact: boolean): number {
-  if (level <= 0) return 2.2;
-  const normalizedLevel = Math.max(1, Math.min(4, Math.round(level))) as 1 | 2 | 3 | 4;
-  return LEVEL_HEIGHTS[normalizedLevel] * (compact ? 66 : 78) * heightScale;
+/** Compute once per data change, never per building or animation frame. */
+export function maximumContributionCount(days: readonly Pick<ContributionDay, 'count'>[]): number {
+  let maximum = 0;
+  for (const day of days) maximum = Math.max(maximum, day.count);
+  return maximum;
+}
+
+/** Color levels stay discrete; body height follows the exact relative count. */
+export function calculateBuildingHeight(count: number, maxCount: number, heightScale: number, compact: boolean): number {
+  if (count <= 0 || maxCount <= 0) return EMPTY_HEIGHT;
+  const maximumHeight = (compact ? 66 : 78) * heightScale;
+  const minimumHeight = maximumHeight * 0.12;
+  const relativeCount = Math.min(1, count / maxCount);
+  return minimumHeight + (maximumHeight - minimumHeight) * relativeCount;
 }
 
 export function drawBuilding(
@@ -28,7 +39,7 @@ export function drawBuilding(
   const { heightScale, buildingDetail, palette, geometry } = options;
   const progress = options.progress;
   const inset = 0.1;
-  const height = calculateBuildingHeight(day.level, heightScale, geometry.compact);
+  const height = calculateBuildingHeight(day.count, options.maxCount, heightScale, geometry.compact);
   const column = day.weekIndex;
   const row = day.weekday;
   const isoBase: [Point, Point, Point, Point] = [

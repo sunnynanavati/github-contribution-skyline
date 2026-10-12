@@ -73,6 +73,8 @@ type ContributionDay = {
 
 Dates use `YYYY-MM-DD` and are interpreted in UTC. Missing dates inside the displayed period are filled with zeroes. Duplicate dates are merged by summing counts, and the last explicit level wins. If levels are omitted, the package derives relative quartiles from the supplied exact counts. Input can span a partial year or up to 54 displayed calendar weeks.
 
+Building heights use exact daily counts, independently of color levels. The busiest day in the displayed data reaches the maximum body height; other positive days interpolate continuously from a small readable minimum to that maximum. For example, 13, 14, and 15 contributions produce distinct heights even when they share a color. Multiplying every daily count by ten preserves the skyline's proportions. `heightScale` adjusts the overall height, and zero-contribution days remain low tiles. Roof details are decorative additions above the body height.
+
 ## GitHub GraphQL adapter
 
 GitHub's `contributionCalendar` includes exact daily counts, relative levels, dates, weeks, and a total. Fetch it on a server because a GitHub token must never be embedded in browser code.

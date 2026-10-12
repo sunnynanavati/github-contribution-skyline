@@ -1,5 +1,5 @@
 import { animationStep, isAnimationSettled } from './animation';
-import { drawBuilding } from './buildings';
+import { drawBuilding, maximumContributionCount } from './buildings';
 import { splashStep } from './splash';
 import { SplatMorph } from './SplatMorph';
 import { calculateGeometry, clamp, type SkylineGeometry } from './geometry';
@@ -41,6 +41,7 @@ export class SkylineRenderer {
   private active = true;
   private selectedDate: string | null = null;
   private readonly sortedDays: NormalizedContributionDay[] = [];
+  private maxCount = 0;
   private splat: SplatMorph | null = null;
   private readonly resizeObserver: ResizeObserver;
   private readonly onWindowResize = () => this.resize();
@@ -138,6 +139,7 @@ export class SkylineRenderer {
   }
 
   private rebuildOrder(): void {
+    this.maxCount = maximumContributionCount(this.grid.days);
     this.sortedDays.length = 0;
     this.sortedDays.push(...this.grid.days);
     this.sortedDays.sort((a, b) => (a.weekIndex + a.weekday) - (b.weekIndex + b.weekday));
@@ -211,6 +213,7 @@ export class SkylineRenderer {
         buildingDetail: this.buildingDetail,
         palette: this.palette,
         geometry: this.geometry,
+        maxCount: this.maxCount,
         splash: this.transitionStyle === 'splash' && !this.reducedMotion,
         weeks: this.grid.weeks,
       });

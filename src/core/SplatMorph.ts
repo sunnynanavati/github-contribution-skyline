@@ -1,5 +1,5 @@
 import { type Point, type SkylineGeometry } from './geometry';
-import { calculateBuildingHeight } from './buildings';
+import { calculateBuildingHeight, maximumContributionCount } from './buildings';
 import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade, type RoofStyle } from './roof-details';
 import { splatDelay, splatHeightFactor } from './splash';
 import { splatCamera } from './splat-camera';
@@ -27,11 +27,12 @@ export class SplatMorph {
     this.heights = new Float32Array(this.count);
     this.delays = new Float32Array(this.count);
     const ordered = [...grid.days].sort((a,b) => a.weekIndex+a.weekday-b.weekIndex-b.weekday);
+    const maxCount = maximumContributionCount(grid.days);
     for (let index=0; index<ordered.length; index+=1) {
       const day = ordered[index]!;
       this.world[index*2] = day.weekIndex+0.5-grid.weeks/2;
       this.world[index*2+1] = day.weekday-3;
-      this.heights[index]=calculateBuildingHeight(day.level,heightScale,geometry.compact);
+      this.heights[index]=calculateBuildingHeight(day.count,maxCount,heightScale,geometry.compact);
       this.delays[index]=splatDelay(day.weekIndex,day.weekday,grid.weeks);
       const color=palette.levels[day.level];
       this.colors.push(color);
