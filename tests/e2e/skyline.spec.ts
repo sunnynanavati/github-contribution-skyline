@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 test('primary demo is accessible and interactive', async ({ page }, testInfo) => {
-  await page.goto('/');
+  await page.goto('/?preview=original');
   const component = page.locator('[data-github-skyline]').first();
   const shell = component.locator('.shell');
   await expect(shell).toBeVisible();
@@ -31,7 +31,7 @@ test('primary demo is accessible and interactive', async ({ page }, testInfo) =>
 
 test('mobile layout has no horizontal overflow and responds to touch', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Mobile project only');
-  await page.goto('/');
+  await page.goto('/?preview=original');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   const component = page.locator('[data-github-skyline]').first();
   await component.locator('canvas').tap();
@@ -42,7 +42,7 @@ for (const palette of ['green', 'red', 'mono', 'orange', 'blue', 'yellow']) {
   test(`visual palette: ${palette}`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name.includes('mobile'), 'Desktop visual snapshots only');
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
+    await page.goto('/?preview=original');
     const component = page.locator('[data-github-skyline]').first();
     await page.locator(`.palette-tray [data-palette="${palette}"]`).click();
     await page.mouse.move(0, 0);

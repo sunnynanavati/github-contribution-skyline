@@ -62,6 +62,7 @@ export interface SkylineOptions {
   buildingDetail?: boolean;
   variant?: SkylineVariant;
   graphExpansion?: GraphExpansion;
+  transitionStyle?: 'morph' | 'splash';
   flattenMode?: FlattenMode;
   initialView?: SkylineView;
   showControls?: boolean;
@@ -89,6 +90,7 @@ export interface ResolvedSkylineOptions extends Omit<SkylineOptions, 'palette'> 
   buildingDetail: boolean;
   variant: SkylineVariant;
   graphExpansion: GraphExpansion;
+  transitionStyle: 'morph' | 'splash';
   flattenMode: FlattenMode;
   initialView: SkylineView;
   showControls: boolean;

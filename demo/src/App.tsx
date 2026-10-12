@@ -4,6 +4,7 @@ import { CodeIcon, CopyIcon, CornersOutIcon } from '@phosphor-icons/react';
 import { SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
 import { GitHubSkyline } from '../../src/react';
 import { makeFixture } from './fixture';
+import { BloomPreview } from './motion/BloomPreview';
 
 type PanelName = 'install' | 'description' | 'code';
 
@@ -18,7 +19,7 @@ const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/r
   buildingDetail
 />`;
 
-export function App() {
+export function App({ original = false }: { original?: boolean }) {
   const contributions = useMemo(makeFixture, []);
   const total = useMemo(() => contributions.reduce((sum, day) => sum + day.count, 0), [contributions]);
   const [palette, setPalette] = useState<SkylinePaletteName>('red');
@@ -55,7 +56,8 @@ export function App() {
 
   return (
     <main className="demo-page">
-      <section className="component-stage" aria-label="GitHub Contribution Skyline component demo">
+      <h1 className="bloom-sr">GitHub Contribution Skyline</h1>
+      <section className="component-stage" data-motion-preview={!original || undefined} aria-label="GitHub Contribution Skyline component demo">
         <div className="stage-actions" aria-label="Component actions">
           <button
             className="install-trigger"
@@ -89,7 +91,7 @@ export function App() {
         </div>
 
         <div className="component-preview">
-          <GitHubSkyline
+          {original ? <GitHubSkyline
             contributions={contributions}
             username="sunny"
             totalContributions={total}
@@ -97,10 +99,11 @@ export function App() {
             heightScale={1}
             buildingDetail
             variant="card"
-            graphExpansion="overlay"
+            graphExpansion="inline"
+            transitionStyle="splash"
             showControls={false}
             ariaLabel="Sunny's GitHub contribution skyline"
-          />
+          /> : <BloomPreview contributions={contributions} palette={displayPalette} />}
         </div>
 
         {activePanel && (
@@ -108,7 +111,7 @@ export function App() {
             {activePanel === 'install' && (
               <>
                 <span className="panel-label">Install</span>
-                <h1>Add the component</h1>
+                <h2>Add the component</h2>
                 <p>Install the package, then pass it an array of contribution days.</p>
                 <div className="command-row">
                   <code>{INSTALL_COMMAND}</code>
@@ -123,7 +126,7 @@ export function App() {
             {activePanel === 'description' && (
               <>
                 <span className="panel-label">Description</span>
-                <h1>GitHub Contribution Skyline</h1>
+                <h2>GitHub Contribution Skyline</h2>
                 <p>One year of contribution data becomes a 3D city. Hover, press, or use the keyboard to return to the familiar graph.</p>
                 <a href={SOURCE_URL} target="_blank" rel="noreferrer">View source on GitHub</a>
               </>
@@ -132,7 +135,7 @@ export function App() {
             {activePanel === 'code' && (
               <>
                 <span className="panel-label">React</span>
-                <h1>Basic usage</h1>
+                <h2>Basic usage</h2>
                 <pre tabIndex={0}><code>{USAGE_CODE}</code></pre>
               </>
             )}

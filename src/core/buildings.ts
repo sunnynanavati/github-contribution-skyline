@@ -10,6 +10,8 @@ export interface BuildingRenderOptions {
   buildingDetail: boolean;
   palette: CustomSkylinePalette;
   geometry: SkylineGeometry;
+  splash?: boolean;
+  weeks?: number;
 }
 
 export function calculateBuildingHeight(level: number, heightScale: number, compact: boolean): number {
@@ -23,7 +25,8 @@ export function drawBuilding(
   day: NormalizedContributionDay,
   options: BuildingRenderOptions,
 ): void {
-  const { progress, heightScale, buildingDetail, palette, geometry } = options;
+  const { heightScale, buildingDetail, palette, geometry } = options;
+  const progress = options.progress;
   const inset = 0.1;
   const height = calculateBuildingHeight(day.level, heightScale, geometry.compact);
   const column = day.weekIndex;

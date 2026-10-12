@@ -59,9 +59,12 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export function clampTooltipPosition(x: number, y: number, width: number, height: number): Point {
+export function clampTooltipPosition(x: number, y: number, width: number, height: number, tooltipWidth = 160, tooltipHeight = 40): Point {
+  const padding = 10;
+  const gap = 12;
+  const above = y - tooltipHeight - gap;
   return {
-    x: clamp(x, 80, Math.max(80, width - 80)),
-    y: clamp(y, 70, Math.max(70, height - 16)),
+    x: clamp(x - tooltipWidth / 2, padding, Math.max(padding, width - tooltipWidth - padding)),
+    y: clamp(above >= padding ? above : y + gap, padding, Math.max(padding, height - tooltipHeight - padding)),
   };
 }

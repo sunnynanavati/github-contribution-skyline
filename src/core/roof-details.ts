@@ -22,7 +22,8 @@ function shade(hex: string, factor: number): string {
 }
 
 function polygon(context: CanvasRenderingContext2D, points: readonly Point[], fill: string, alpha: number): void {
-  context.globalAlpha = alpha;
+  const inheritedAlpha = context.globalAlpha;
+  context.globalAlpha = inheritedAlpha * alpha;
   context.beginPath();
   context.moveTo(points[0]?.x ?? 0, points[0]?.y ?? 0);
   for (let index = 1; index < points.length; index += 1) {
@@ -32,7 +33,7 @@ function polygon(context: CanvasRenderingContext2D, points: readonly Point[], fi
   context.closePath();
   context.fillStyle = fill;
   context.fill();
-  context.globalAlpha = 1;
+  context.globalAlpha = inheritedAlpha;
 }
 
 export function roofStyleFor(column: number, row: number): RoofStyle {

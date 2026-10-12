@@ -51,6 +51,7 @@ describe('renderer lifecycle', () => {
       maxDevicePixelRatio: 2,
       initialView: 'skyline',
       reducedMotion: false,
+      transitionStyle: 'splash',
       onViewChange,
     });
 

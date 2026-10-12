@@ -1,0 +1,59 @@
+.bloom-preview {
+  position: relative;
+  height: clamp(260px, min(48vw, calc(100dvh - 240px)), 620px);
+  overflow: hidden;
+  border: 1px solid #3a3d3b;
+  border-radius: 18px;
+  background: #111212;
+  color: #eef0ee;
+  box-shadow: 0 34px 90px rgb(0 0 0 / .34);
+  touch-action: pan-y;
+}
+.bloom-preview:focus-visible { outline: 2px solid #eef0ee; outline-offset: 4px; }
+.bloom-preview > canvas { display: block; width: 100%; height: 100%; }
+.bloom-topline {
+  position: absolute;
+  inset: 18px 20px auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  pointer-events: none;
+  font: 650 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.bloom-identity { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bloom-hint { flex-shrink: 0; color: #9ba09d; font-weight: 500; }
+.bloom-legend {
+  position: absolute;
+  bottom: 18px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #9ba09d;
+  font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+.bloom-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.bloom-tooltip {
+  position: absolute;
+  max-width: calc(100% - 20px);
+  padding: 10px 12px;
+  border: 1px solid #3a3d3b;
+  border-radius: 8px;
+  background: #1a1c1b;
+  color: #eef0ee;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  box-shadow: 0 4px 14px #0004;
+}
+.bloom-error { position: absolute; inset: 35% 20px auto; text-align: center; }
+.bloom-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.bloom-fallback { max-height: 240px; overflow: auto; margin-top: 16px; }
+.bloom-fallback table { width: 100%; text-align: left; }
+@media (max-width: 720px) {
+  .bloom-preview { height: min(520px, 62dvh); min-height: 260px; border-radius: 14px; }
+  .bloom-topline { inset: 16px 14px auto; font-size: 10px; }
+  .bloom-hint { display: none; }
+  .bloom-legend { left: 14px; bottom: 16px; }
+}

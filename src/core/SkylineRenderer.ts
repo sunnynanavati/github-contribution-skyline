@@ -1,5 +1,7 @@
 import { animationStep, isAnimationSettled } from './animation';
 import { drawBuilding } from './buildings';
+import { splashStep } from './splash';
+import { SplatMorph } from './SplatMorph';
 import { calculateGeometry, clamp, type SkylineGeometry } from './geometry';
 import type { ContributionGrid, CustomSkylinePalette, NormalizedContributionDay, SkylineView } from './types';
 
@@ -13,6 +15,7 @@ export interface SkylineRendererOptions {
   maxDevicePixelRatio: number;
   initialView: SkylineView;
   reducedMotion: boolean;
+  transitionStyle?: 'morph' | 'splash';
   onViewChange?: (view: SkylineView) => void;
 }
 
@@ -26,6 +29,7 @@ export class SkylineRenderer {
   private showLabels: boolean;
   private maxDevicePixelRatio: number;
   private reducedMotion: boolean;
+  private transitionStyle: 'morph' | 'splash';
   private onViewChange?: (view: SkylineView) => void;
   private width = 0;
   private height = 0;
@@ -37,6 +41,7 @@ export class SkylineRenderer {
   private active = true;
   private selectedDate: string | null = null;
   private readonly sortedDays: NormalizedContributionDay[] = [];
+  private splat: SplatMorph | null = null;
   private readonly resizeObserver: ResizeObserver;
   private readonly onWindowResize = () => this.resize();
   private readonly onVisibilityChange = () => this.setActive(document.visibilityState !== 'hidden');
@@ -57,6 +62,7 @@ export class SkylineRenderer {
     this.showLabels = options.showLabels;
     this.maxDevicePixelRatio = options.maxDevicePixelRatio;
     this.reducedMotion = options.reducedMotion;
+    this.transitionStyle = options.transitionStyle ?? 'morph';
     this.onViewChange = options.onViewChange;
     this.progress = options.initialView === 'graph' ? 1 : 0;
     this.target = this.progress;
@@ -77,8 +83,10 @@ export class SkylineRenderer {
     if (options.showLabels !== undefined) this.showLabels = options.showLabels;
     if (options.maxDevicePixelRatio !== undefined) this.maxDevicePixelRatio = clamp(options.maxDevicePixelRatio, 1, 4);
     if (options.reducedMotion !== undefined) this.reducedMotion = options.reducedMotion;
+    if (options.transitionStyle !== undefined) this.transitionStyle = options.transitionStyle;
     if (options.onViewChange !== undefined) this.onViewChange = options.onViewChange;
     this.geometry = calculateGeometry(this.width, this.height, this.grid.weeks);
+    this.splat = null;
     this.requestDraw();
   }
 
@@ -114,7 +122,7 @@ export class SkylineRenderer {
   }
 
   hitTest(x: number, y: number): NormalizedContributionDay | null {
-    if (this.progress < 0.88 || !this.grid.days.length) return null;
+    if (this.raf !== null || this.progress < 0.88 || !this.grid.days.length) return null;
     const week = Math.floor((x - this.geometry.flatLeft) / this.geometry.flatCell);
     const weekday = Math.floor((y - this.geometry.flatTop) / this.geometry.flatCell);
     if (week < 0 || week >= this.grid.weeks || weekday < 0 || weekday > 6) return null;
@@ -123,6 +131,7 @@ export class SkylineRenderer {
 
   destroy(): void {
     this.cancelFrame();
+    this.splat = null;
     this.resizeObserver.disconnect();
     window.removeEventListener('resize', this.onWindowResize);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
@@ -144,6 +153,7 @@ export class SkylineRenderer {
     this.canvas.height = Math.max(1, Math.round(rect.height * ratio));
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.geometry = calculateGeometry(this.width, this.height, this.grid.weeks);
+    this.splat = null;
     this.requestDraw();
   }
 
@@ -154,6 +164,9 @@ export class SkylineRenderer {
 
   private startAnimation(): void {
     if (!this.active || this.raf !== null) return;
+    if (this.transitionStyle === 'splash' && !this.reducedMotion) {
+      this.splat ??= new SplatMorph(this.grid, this.geometry, this.palette, this.heightScale, this.buildingDetail);
+    }
     this.lastFrame = performance.now();
     this.raf = requestAnimationFrame((time) => this.frame(time));
   }
@@ -161,7 +174,9 @@ export class SkylineRenderer {
   private frame(time: number): void {
     const elapsed = time - this.lastFrame;
     this.lastFrame = time;
-    this.progress = animationStep(this.progress, this.target, elapsed);
+    this.progress = this.transitionStyle === 'splash'
+      ? splashStep(this.progress, this.target, elapsed)
+      : animationStep(this.progress, this.target, elapsed);
     this.draw();
     if (isAnimationSettled(this.progress, this.target)) {
       this.progress = this.target;
@@ -186,13 +201,18 @@ export class SkylineRenderer {
       context.fillRect(0, 0, this.width, this.height);
       if (this.palette.texture === 'diagonal') this.drawTexture();
     }
-    for (const day of this.sortedDays) {
+    if (this.transitionStyle === 'splash' && !this.reducedMotion && this.progress > 0 && this.progress < 1) {
+      this.splat ??= new SplatMorph(this.grid, this.geometry, this.palette, this.heightScale, this.buildingDetail);
+      this.splat.draw(context, this.progress);
+    } else for (const day of this.sortedDays) {
       drawBuilding(context, day, {
         progress: this.progress,
         heightScale: this.heightScale,
         buildingDetail: this.buildingDetail,
         palette: this.palette,
         geometry: this.geometry,
+        splash: this.transitionStyle === 'splash' && !this.reducedMotion,
+        weeks: this.grid.weeks,
       });
     }
     if (this.showLabels && this.progress > 0.7) this.drawLabels((this.progress - 0.7) / 0.3);
