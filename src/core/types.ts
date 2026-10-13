@@ -81,6 +81,7 @@ export interface SkylineOptions {
 }
 
 export interface ResolvedSkylineOptions extends Omit<SkylineOptions, 'palette'> {
+  configurationError?: string;
   username: string;
   palette: CustomSkylinePalette;
   heightScale: number;

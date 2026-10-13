@@ -1,0 +1,18 @@
+import { createElement } from 'react';
+import { GitHubSkyline, type GitHubSkylineProps, type GitHubSkylineHandle } from 'github-contribution-skyline/react';
+import { createSkyline, SKYLINE_DEFAULTS, type ContributionDay, type SkylineVariant, type SkylineRendererOptions } from 'github-contribution-skyline';
+import { GitHubSkylineElement, defineGitHubSkyline } from 'github-contribution-skyline/element';
+const days: ContributionDay[] = [{ date: '2026-10-12', count: 4 }];
+const variant: SkylineVariant = 'bare';
+const props: GitHubSkylineProps = { contributions: days, variant, heightScale: SKYLINE_DEFAULTS.heightScale };
+createElement(GitHubSkyline, props);
+declare const handle: GitHubSkylineHandle;
+handle.setView('graph');
+declare const options: SkylineRendererOptions;
+options.palette.levels[0].toUpperCase();
+createSkyline(document.createElement('div'), props);
+defineGitHubSkyline();
+new GitHubSkylineElement().contributions = days;
+// @ts-expect-error Invalid palette names must not widen to any in the tarball.
+const invalid: GitHubSkylineProps = { contributions: days, palette: 'purple' };
+void invalid;

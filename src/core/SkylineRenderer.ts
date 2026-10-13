@@ -1,8 +1,8 @@
-import { calculateSkylineGeometry, poseTimeFor, SplatPlayhead } from './animation';
-import { SkylineScene } from './SkylineScene';
-import { SKYLINE_DEFAULTS } from './defaults';
-import { calculateGeometry, clamp, type SkylineGeometry } from './geometry';
-import type { ContributionGrid, CustomSkylinePalette, NormalizedContributionDay, SkylineView } from './types';
+import { calculateSkylineGeometry, poseTimeFor, SplatPlayhead } from './animation.js';
+import { SkylineScene } from './SkylineScene.js';
+import { SKYLINE_DEFAULTS } from './defaults.js';
+import { calculateGeometry, clamp, type SkylineGeometry } from './geometry.js';
+import type { ContributionGrid, CustomSkylinePalette, NormalizedContributionDay, SkylineView } from './types.js';
 
 export interface SkylineRendererOptions {
   grid: ContributionGrid;
@@ -14,8 +14,13 @@ export interface SkylineRendererOptions {
   maxDevicePixelRatio: number;
   initialView: SkylineView;
   reducedMotion: boolean;
+  locale?: string;
+  weekStartsOn?: 0 | 1;
   onViewChange?: (view: SkylineView) => void;
+  onError?: (error: Error) => void;
 }
+
+export class CanvasUnavailableError extends Error {}
 
 export class SkylineRenderer {
   private readonly context: CanvasRenderingContext2D;
@@ -28,6 +33,11 @@ export class SkylineRenderer {
   private maxDevicePixelRatio: number;
   private reducedMotion: boolean;
   private onViewChange?: (view: SkylineView) => void;
+  private readonly onError?: (error: Error) => void;
+  private locale: string;
+  private weekStartsOn: 0 | 1;
+  private labels: Array<{ text: string; x: number; y: number }> = [];
+  private failed = false;
   private width = 0;
   private height = 0;
   private geometry: SkylineGeometry = calculateGeometry(1, 1, 1);
@@ -54,7 +64,7 @@ export class SkylineRenderer {
     options: SkylineRendererOptions,
   ) {
     const context = canvas.getContext('2d');
-    if (!context) throw new Error('Canvas 2D is unavailable.');
+    if (!context) throw new CanvasUnavailableError('Canvas 2D is unavailable.');
     this.context = context;
     this.grid = options.grid;
     this.palette = options.palette;
@@ -65,6 +75,9 @@ export class SkylineRenderer {
     this.maxDevicePixelRatio = Number.isFinite(options.maxDevicePixelRatio) ? clamp(options.maxDevicePixelRatio, 1, 4) : 2;
     this.reducedMotion = options.reducedMotion;
     this.onViewChange = options.onViewChange;
+    this.onError = options.onError;
+    this.locale = options.locale ?? 'en-US';
+    this.weekStartsOn = options.weekStartsOn ?? 0;
     this.clock.seek(options.initialView === 'graph' ? this.clock.duration : 0);
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
@@ -85,6 +98,8 @@ export class SkylineRenderer {
     if (options.maxDevicePixelRatio !== undefined) this.maxDevicePixelRatio = Number.isFinite(options.maxDevicePixelRatio) ? clamp(options.maxDevicePixelRatio, 1, 4) : 2;
     if (options.reducedMotion !== undefined) this.reducedMotion = options.reducedMotion;
     if ('onViewChange' in options) this.onViewChange = options.onViewChange;
+    if (options.locale !== undefined) this.locale = options.locale;
+    if (options.weekStartsOn !== undefined) this.weekStartsOn = options.weekStartsOn;
     const finish = this.reducedMotion && !this.clock.settled;
     if (finish) { this.clock.seek(this.clock.target); this.cancelFrame(); }
     this.resize();
@@ -110,6 +125,7 @@ export class SkylineRenderer {
 
   getView(): SkylineView { return this.clock.target === this.clock.duration ? 'graph' : 'skyline'; }
   isAnimating(): boolean { return this.raf !== null; }
+  hasFailed(): boolean { return this.failed; }
 
   setActive(active: boolean): void {
     this.inView = active;
@@ -147,12 +163,16 @@ export class SkylineRenderer {
 
   private watchDpr(): void {
     this.dprMedia?.removeEventListener('change', this.onDprChange);
-    if (typeof window.matchMedia !== 'function') return;
+    if (this.disposed || typeof window.matchMedia !== 'function') return;
     this.dprMedia = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
     this.dprMedia.addEventListener('change', this.onDprChange);
   }
 
   private resize(): void {
+    try { this.resizeScene(); } catch (error) { this.fail(error); }
+  }
+
+  private resizeScene(): void {
     if (this.disposed) return;
     const rect = this.container.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -165,12 +185,19 @@ export class SkylineRenderer {
     }
     this.geometry = calculateSkylineGeometry(this.width, this.height, this.grid.weeks, this.heightScale);
     this.scene = new SkylineScene(this.grid, this.geometry, this.palette, this.heightScale, this.buildingDetail);
+    this.cacheLabels();
     this.requestDraw();
+  }
+
+  private fail(error: unknown): void {
+    this.failed = true;
+    this.destroy();
+    this.onError?.(error instanceof Error ? error : new Error('Canvas rendering failed.'));
   }
 
   private requestDraw(): void {
     if (!this.active) return;
-    this.draw();
+    try { this.draw(); } catch (error) { this.fail(error); }
   }
 
   private startAnimation(): void {
@@ -185,7 +212,8 @@ export class SkylineRenderer {
     const elapsed = time - this.lastFrame;
     this.lastFrame = time;
     this.clock.advance(elapsed);
-    this.draw();
+    this.requestDraw();
+    if (this.disposed) return;
     if (this.clock.settled) {
       this.onViewChange?.(this.getView());
       return;
@@ -232,21 +260,32 @@ export class SkylineRenderer {
     context.fillStyle = this.palette.muted;
     context.globalAlpha = alpha;
     context.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
+    for (const label of this.labels) context.fillText(label.text, label.x, label.y);
+    context.restore();
+  }
+
+  private cacheLabels(): void {
+    this.labels = [];
+    const monthFormatter = new Intl.DateTimeFormat(this.locale, { month: 'short', timeZone: 'UTC' });
+    const weekdayFormatter = new Intl.DateTimeFormat(this.locale, { weekday: 'short', timeZone: 'UTC' });
     let priorMonth = -1;
     for (const day of this.grid.days) {
       if (day.weekday !== 0) continue;
       const month = new Date(day.dateValue).getUTCMonth();
       if (month === priorMonth) continue;
       priorMonth = month;
-      const label = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' }).format(day.dateValue);
-      context.fillText(label, this.geometry.flatLeft + day.weekIndex * this.geometry.flatCell, this.geometry.flatTop - 10);
+      const text = monthFormatter.format(day.dateValue);
+      const x = this.geometry.flatLeft + day.weekIndex * this.geometry.flatCell;
+      const previous = this.labels.at(-1);
+      if (!previous || x - previous.x >= previous.text.length * 6 + 4) this.labels.push({ text, x, y: this.geometry.flatTop - 10 });
     }
     if (!this.geometry.compact) {
-      context.fillText('Mon', this.geometry.flatLeft - 30, this.geometry.flatTop + this.geometry.flatCell * 2 - 1);
-      context.fillText('Wed', this.geometry.flatLeft - 30, this.geometry.flatTop + this.geometry.flatCell * 4 - 1);
-      context.fillText('Fri', this.geometry.flatLeft - 30, this.geometry.flatTop + this.geometry.flatCell * 6 - 1);
+      for (const weekday of [1, 3, 5]) this.labels.push({
+        text: weekdayFormatter.format(Date.UTC(2026, 0, 4 + weekday)),
+        x: this.geometry.flatLeft - 30,
+        y: this.geometry.flatTop + this.geometry.flatCell * ((weekday - this.weekStartsOn + 7) % 7 + 1) - 1,
+      });
     }
-    context.restore();
   }
 
   private drawSelection(): void {

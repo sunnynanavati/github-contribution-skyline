@@ -4,7 +4,7 @@ import type {
   ContributionLevel,
   GitHubContributionCalendar,
   NormalizedContributionDay,
-} from './types';
+} from './types.js';
 
 const DAY_MS = 86_400_000;
 const LEVEL_MAP: Record<string, ContributionLevel> = {
@@ -16,7 +16,7 @@ const LEVEL_MAP: Record<string, ContributionLevel> = {
 };
 
 export function parseUTCDate(date: string): number {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`Invalid contribution date: ${date}`);
+  if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid contribution date: expected YYYY-MM-DD.');
   const value = Date.parse(`${date}T00:00:00.000Z`);
   if (!Number.isFinite(value) || new Date(value).toISOString().slice(0, 10) !== date) throw new Error(`Invalid contribution date: ${date}`);
   return value;
@@ -27,6 +27,7 @@ export function formatUTCDate(value: number): string {
 }
 
 export function deriveContributionLevels(counts: readonly number[]): ContributionLevel[] {
+  if (!Array.isArray(counts) || counts.some(count => !Number.isSafeInteger(count) || count < 0)) throw new Error('Counts must be non-negative safe integers.');
   const positive = counts.filter((count) => count > 0).sort((a, b) => a - b);
   if (!positive.length) return counts.map(() => 0);
   const threshold = (percentile: number) => positive[Math.min(positive.length - 1, Math.floor((positive.length - 1) * percentile))] ?? 0;
@@ -44,12 +45,17 @@ export function deriveContributionLevels(counts: readonly number[]): Contributio
 
 export function normalizeContributions(input: readonly ContributionDay[], weekStartsOn: 0 | 1 = 0): ContributionGrid {
   if (!Array.isArray(input)) throw new Error('contributions must be an array.');
+  if (weekStartsOn !== 0 && weekStartsOn !== 1) throw new Error('weekStartsOn must be 0 or 1.');
   if (!input.length) return { days: [], weeks: 0, startDate: null, endDate: null, totalContributions: 0 };
 
   const merged = new Map<number, { date: string; count: number; level?: ContributionLevel }>();
+  let totalContributions = 0;
   for (const item of input) {
+    if (!item || typeof item !== 'object') throw new Error('Each contribution must be a day object.');
     const dateValue = parseUTCDate(item.date);
-    if (!Number.isFinite(item.count) || item.count < 0 || !Number.isInteger(item.count)) throw new Error(`Invalid contribution count for ${item.date}.`);
+    if (!Number.isSafeInteger(item.count) || item.count < 0) throw new Error(`Invalid contribution count for ${item.date}.`);
+    totalContributions += item.count;
+    if (!Number.isSafeInteger(totalContributions)) throw new Error('Contribution total exceeds the safe integer limit.');
     if (item.level !== undefined && (!Number.isInteger(item.level) || item.level < 0 || item.level > 4)) throw new Error(`Invalid contribution level for ${item.date}.`);
     const prior = merged.get(dateValue);
     merged.set(dateValue, {
@@ -98,15 +104,22 @@ export function normalizeContributions(input: readonly ContributionDay[], weekSt
     weeks,
     startDate: days[0]?.date ?? null,
     endDate: days.at(-1)?.date ?? null,
-    totalContributions: mergedValues.reduce((sum, day) => sum + day.count, 0),
+    totalContributions,
   };
 }
 
 export function fromGitHubContributionCalendar(calendar: GitHubContributionCalendar): ContributionDay[] {
   if (!calendar || !Array.isArray(calendar.weeks)) throw new Error('Invalid GitHub contribution calendar.');
-  return calendar.weeks.flatMap((week) => week.contributionDays.map((day) => ({
-    date: day.date,
-    count: day.contributionCount,
-    level: day.contributionLevel ? LEVEL_MAP[day.contributionLevel] : undefined,
-  })));
+  const days = calendar.weeks.flatMap((week) => {
+    if (!week || !Array.isArray(week.contributionDays)) throw new Error('Invalid GitHub contribution week.');
+    return week.contributionDays.map((day) => {
+      if (!day || typeof day !== 'object') throw new Error('Invalid GitHub contribution day.');
+      const level = day.contributionLevel;
+      if (level !== undefined && (typeof level !== 'string' || !Object.hasOwn(LEVEL_MAP, level))) throw new Error('Invalid GitHub contribution level.');
+      return { date: day.date, count: day.contributionCount, level: level === undefined ? undefined : LEVEL_MAP[level] };
+    });
+  });
+  // Validate exact counts/dates without returning padded or merged adapter data.
+  normalizeContributions(days);
+  return days;
 }

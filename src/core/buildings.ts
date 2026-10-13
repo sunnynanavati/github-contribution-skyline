@@ -1,5 +1,5 @@
-import type { ContributionDay } from './types';
-import { SKYLINE_DEFAULTS } from './defaults';
+import type { ContributionDay } from './types.js';
+import { SKYLINE_DEFAULTS } from './defaults.js';
 
 const EMPTY_HEIGHT = 2.2;
 

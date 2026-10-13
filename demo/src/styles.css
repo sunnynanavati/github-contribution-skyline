@@ -37,6 +37,7 @@ a {
   min-height: calc(100dvh - 24px);
   display: grid;
   place-items: center;
+  padding-block: 108px 104px;
   overflow: hidden;
   border: 1px solid #1d1f1e;
   border-radius: 34px;

@@ -1,4 +1,4 @@
-import type { CustomSkylinePalette, SkylinePaletteName } from './types';
+import type { CustomSkylinePalette, SkylinePaletteName } from './types.js';
 
 export const SKYLINE_PALETTES: Readonly<Record<SkylinePaletteName, CustomSkylinePalette>> = {
   green: {
@@ -29,19 +29,27 @@ export const SKYLINE_PALETTES: Readonly<Record<SkylinePaletteName, CustomSkyline
 
 const colorPattern = /^#[\da-f]{6}$/i;
 
+for (const palette of Object.values(SKYLINE_PALETTES)) {
+  Object.freeze(palette.levels);
+  Object.freeze(palette);
+}
+Object.freeze(SKYLINE_PALETTES);
+
 export function validatePalette(palette: CustomSkylinePalette): CustomSkylinePalette {
-  if (!palette.name.trim() || !palette.label.trim()) throw new Error('A custom palette requires a name and label.');
+  if (!palette || typeof palette !== 'object' || typeof palette.name !== 'string' || typeof palette.label !== 'string' || !palette.name.trim() || !palette.label.trim()) throw new Error('A custom palette requires a name and label.');
+  if (!Array.isArray(palette.levels)) throw new Error('Custom palette levels must contain exactly five colors.');
   const colors = [palette.surface, palette.elevated, palette.ink, palette.muted, palette.border, palette.grid, palette.focus, ...palette.levels];
-  if (palette.levels.length !== 5 || colors.some((color) => !colorPattern.test(color))) {
+  if (palette.levels.length !== 5 || colors.some((color) => typeof color !== 'string' || !colorPattern.test(color))) {
     throw new Error('Custom palette colors must be six-digit hexadecimal values and levels must contain exactly five colors.');
   }
-  return { ...palette, levels: [...palette.levels] as CustomSkylinePalette['levels'], texture: palette.texture ?? 'none' };
+  if (palette.texture !== undefined && palette.texture !== 'none' && palette.texture !== 'diagonal') throw new Error('Unknown palette texture.');
+  return { ...palette, levels: [palette.levels[0], palette.levels[1], palette.levels[2], palette.levels[3], palette.levels[4]], texture: palette.texture ?? 'none' };
 }
 
 export function resolvePalette(palette: SkylinePaletteName | CustomSkylinePalette | undefined): CustomSkylinePalette {
   if (!palette) return SKYLINE_PALETTES.green;
   if (typeof palette === 'string') {
-    const resolved = SKYLINE_PALETTES[palette];
+    const resolved = Object.hasOwn(SKYLINE_PALETTES, palette) ? SKYLINE_PALETTES[palette] : undefined;
     if (!resolved) throw new Error(`Unknown skyline palette: ${palette}`);
     return resolved;
   }

@@ -9,3 +9,7 @@ test-results/
 .env
 .env.*
 !.env.example
+# Local-only visual studies; never add them to release branches.
+prototypes/
+concepts/
+experiments/

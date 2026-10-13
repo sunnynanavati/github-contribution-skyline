@@ -6,27 +6,41 @@ on:
       confirm:
         description: Type publish to release the current package version
         required: true
+      version:
+        description: Exact package version to publish (for example 0.1.0)
+        required: true
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'publish'
+    uses: ./.github/workflows/ci.yml
   publish:
-    if: inputs.confirm == 'publish'
+    needs: verify
+    if: github.ref == 'refs/heads/main' && inputs.confirm == 'publish'
+    environment: npm-release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency: npm-release
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          node-version: 20
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
           registry-url: https://registry.npmjs.org
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      - run: npm publish
+          package-manager-cache: false
+      - name: Verify the explicitly approved version
+        run: node -e "require('node:assert/strict').equal(process.env.RELEASE_VERSION, require('./package.json').version)"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+      - run: npm ci
+      - run: npm run build
+      - run: npm run verify:package
+      # Requires the maintainer to configure npm trusted publishing first.
+      # This job is manual only; no tag, push, or scheduled event publishes.
+      - run: npm publish --provenance --access public

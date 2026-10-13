@@ -1,4 +1,4 @@
-import { createSkyline } from '../core/SkylineController';
+import { createSkyline } from '../core/SkylineController.js';
 import type {
   ContributionDay,
   FlattenMode,
@@ -7,9 +7,11 @@ import type {
   SkylinePaletteName,
   SkylineVariant,
   SkylineView,
-} from '../core/types';
+} from '../core/types.js';
 
-export class GitHubSkylineElement extends HTMLElement {
+// Importing the optional element entry on a server must not read a missing DOM.
+const ElementBase = typeof HTMLElement === 'undefined' ? class {} as typeof HTMLElement : HTMLElement;
+export class GitHubSkylineElement extends ElementBase {
   static observedAttributes = ['username', 'palette', 'height-scale', 'building-detail', 'variant', 'flatten-mode', 'show-controls', 'show-legend', 'show-labels', 'week-starts-on', 'aria-label'];
 
   private controller: SkylineController | null = null;
@@ -23,6 +25,12 @@ export class GitHubSkylineElement extends HTMLElement {
 
   connectedCallback(): void {
     if (this.controller) return;
+    // Preserve properties assigned before the browser upgrades this element.
+    if (Object.hasOwn(this, 'contributions')) {
+      const value = this.contributions;
+      Reflect.deleteProperty(this, 'contributions');
+      this.contributions = value;
+    }
     this.controller = createSkyline(this, this.optionsFromAttributes());
   }
 
@@ -62,7 +70,8 @@ export class GitHubSkylineElement extends HTMLElement {
 }
 
 export function defineGitHubSkyline(tagName = 'github-contribution-skyline'): void {
-  if (!customElements.get(tagName)) customElements.define(tagName, GitHubSkylineElement);
+  if (typeof customElements === 'undefined') return;
+  if (!customElements.get(tagName)) customElements.define(tagName, tagName === 'github-contribution-skyline' ? GitHubSkylineElement : class extends GitHubSkylineElement {});
 }
 
 declare global {

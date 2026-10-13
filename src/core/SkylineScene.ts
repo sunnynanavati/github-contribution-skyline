@@ -1,9 +1,9 @@
-import { calculateBuildingHeight, maximumContributionCount } from './buildings';
-import { type Point, type SkylineGeometry } from './geometry';
-import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade, type RoofStyle } from './roof-details';
-import type { ContributionGrid, CustomSkylinePalette } from './types';
-import { splatCamera, collapsePhase, heightFactor, leanPulse, radialDistance, roofSpread } from './animation';
-import { SKYLINE_DEFAULTS } from './defaults';
+import { calculateBuildingHeight, maximumContributionCount } from './buildings.js';
+import { type Point, type SkylineGeometry } from './geometry.js';
+import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade, type RoofStyle } from './roof-details.js';
+import type { ContributionGrid, CustomSkylinePalette } from './types.js';
+import { splatCamera, collapsePhase, heightFactor, leanPulse, radialDistance, roofSpread } from './animation.js';
+import { SKYLINE_DEFAULTS } from './defaults.js';
 
 type Quad = [Point, Point, Point, Point];
 const quad = (): Quad => [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];

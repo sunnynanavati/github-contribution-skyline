@@ -1,1 +1,1 @@
-export { GitHubSkylineElement, defineGitHubSkyline } from './GitHubSkylineElement';
+export { GitHubSkylineElement, defineGitHubSkyline } from './GitHubSkylineElement.js';

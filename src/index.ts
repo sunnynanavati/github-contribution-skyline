@@ -1,8 +1,8 @@
-export { createSkyline } from './core/SkylineController';
-export { SkylineRenderer } from './core/SkylineRenderer';
-export { SKYLINE_DEFAULTS } from './core/defaults';
-export { normalizeContributions, deriveContributionLevels, fromGitHubContributionCalendar, parseUTCDate } from './core/data';
-export { SKYLINE_PALETTES, resolvePalette, validatePalette } from './core/palettes';
+export { createSkyline } from './core/SkylineController.js';
+export { SkylineRenderer } from './core/SkylineRenderer.js';
+export { SKYLINE_DEFAULTS } from './core/defaults.js';
+export { normalizeContributions, deriveContributionLevels, fromGitHubContributionCalendar, parseUTCDate } from './core/data.js';
+export { SKYLINE_PALETTES, resolvePalette, validatePalette } from './core/palettes.js';
 export type {
   ContributionDay,
   ContributionGrid,
@@ -17,4 +17,6 @@ export type {
   SkylinePaletteName,
   SkylineStatus,
   SkylineView,
-} from './core/types';
+  SkylineVariant,
+} from './core/types.js';
+export type { SkylineRendererOptions } from './core/SkylineRenderer.js';

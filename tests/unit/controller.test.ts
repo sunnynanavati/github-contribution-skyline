@@ -69,6 +69,7 @@ describe('skyline controller', () => {
     const controller = createSkyline(host, {
       contributions: [{ date: '2026-09-26', count: 7 }],
       onPaletteChange,
+      variant: 'card',
       onBuildingDetailChange,
       onHeightScaleChange,
       reducedMotion: true,

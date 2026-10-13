@@ -1,9 +1,9 @@
-import { normalizeContributions } from './data';
-import { SKYLINE_DEFAULTS } from './defaults';
-import { clampTooltipPosition } from './geometry';
-import { resolvePalette, SKYLINE_PALETTES } from './palettes';
-import { SkylineRenderer } from './SkylineRenderer';
-import { SKYLINE_STYLES } from './styles';
+import { normalizeContributions } from './data.js';
+import { SKYLINE_DEFAULTS } from './defaults.js';
+import { clampTooltipPosition } from './geometry.js';
+import { resolvePalette, SKYLINE_PALETTES } from './palettes.js';
+import { CanvasUnavailableError, SkylineRenderer } from './SkylineRenderer.js';
+import { SKYLINE_STYLES } from './styles.js';
 import type {
   ContributionDay,
   ContributionGrid,
@@ -13,7 +13,7 @@ import type {
   SkylineOptions,
   SkylinePaletteName,
   SkylineView,
-} from './types';
+} from './types.js';
 
 const paletteOrder: SkylinePaletteName[] = ['green', 'red', 'mono', 'orange', 'blue', 'yellow'];
 
@@ -22,11 +22,22 @@ function defaultReducedMotion(): boolean {
 }
 
 function resolveOptions(input: SkylineOptions): ResolvedSkylineOptions {
+  let palette = SKYLINE_PALETTES.green;
+  let locale = 'en-US';
+  let configurationError: string | undefined;
+  try {
+    palette = resolvePalette(input.palette);
+    locale = Intl.getCanonicalLocales(input.locale ?? 'en-US')[0] ?? 'en-US';
+    if (input.totalContributions !== undefined && (!Number.isSafeInteger(input.totalContributions) || input.totalContributions < 0)) throw new Error('Total contributions must be a non-negative safe integer.');
+  } catch (error) {
+    configurationError = error instanceof Error ? error.message : 'Invalid skyline options.';
+  }
   return {
     ...input,
+    configurationError,
     contributions: input.contributions ?? [],
     username: input.username ?? '',
-    palette: resolvePalette(input.palette),
+    palette,
     heightScale: Math.max(0.4, Math.min(2, Number.isFinite(input.heightScale) ? input.heightScale! : SKYLINE_DEFAULTS.heightScale)),
     buildingDetail: input.buildingDetail ?? true,
     variant: input.variant === 'card' ? 'card' : 'bare',
@@ -35,10 +46,10 @@ function resolveOptions(input: SkylineOptions): ResolvedSkylineOptions {
     showControls: input.showControls ?? true,
     showLegend: input.showLegend ?? true,
     showLabels: input.showLabels ?? true,
-    locale: input.locale ?? 'en-US',
+    locale,
     weekStartsOn: input.weekStartsOn ?? 0,
     ariaLabel: input.ariaLabel ?? 'GitHub contribution skyline',
-    maxDevicePixelRatio: Math.max(1, Math.min(4, input.maxDevicePixelRatio ?? 2)),
+    maxDevicePixelRatio: Math.max(1, Math.min(4, Number.isFinite(input.maxDevicePixelRatio) ? input.maxDevicePixelRatio! : 2)),
     status: input.status ?? 'ready',
     errorMessage: input.errorMessage ?? 'The contribution skyline could not be displayed.',
     reducedMotion: input.reducedMotion ?? defaultReducedMotion(),
@@ -79,6 +90,8 @@ class SkylineControllerImpl implements SkylineController {
   private intersectionObserver: IntersectionObserver | null = null;
   private settingsOpen = false;
   private selectedIndex = -1;
+  private focusFrame: number | null = null;
+  private disposed = false;
 
   constructor(private readonly host: HTMLElement, initial: SkylineOptions) {
     this.input = { ...initial };
@@ -101,7 +114,12 @@ class SkylineControllerImpl implements SkylineController {
 
     this.detailsButton = createElement('button', 'details-toggle');
     this.detailsButton.type = 'button';
-    this.detailsButton.innerHTML = '<span class="sliders-icon" aria-hidden="true"><i></i><i></i><i></i></span><span>Details</span>';
+    const icon = createElement('span', 'sliders-icon');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.append(createElement('i'), createElement('i'), createElement('i'));
+    const buttonLabel = createElement('span');
+    buttonLabel.textContent = 'Details';
+    this.detailsButton.append(icon, buttonLabel);
     this.detailsButton.setAttribute('aria-expanded', 'false');
     this.detailsButton.setAttribute('aria-controls', 'gcs-settings');
 
@@ -173,15 +191,18 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   update(next: Partial<SkylineOptions>): void {
+    if (this.disposed) return;
     this.input = { ...this.input, ...next };
     this.options = resolveOptions(this.input);
     this.apply();
   }
 
   setView(view: SkylineView, immediate = false): void {
+    if (this.disposed) return;
     if (this.options.flattenMode === 'always' && view !== 'graph') return;
     if (this.options.flattenMode === 'never' && view !== 'skyline') return;
     if (view === 'skyline') {
+      this.hideTooltip();
       this.selectedIndex = -1;
       this.renderer?.setSelectedDate(null);
     }
@@ -194,6 +215,8 @@ class SkylineControllerImpl implements SkylineController {
   isAnimating(): boolean { return this.renderer?.isAnimating() ?? false; }
 
   destroy(): void {
+    this.disposed = true;
+    if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
     this.abort.abort();
     this.intersectionObserver?.disconnect();
     this.renderer?.destroy();
@@ -240,7 +263,7 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   private apply(): void {
-    let invalidMessage = '';
+    let invalidMessage = this.options.configurationError ?? '';
     try {
       this.grid = normalizeContributions(this.options.contributions, this.options.weekStartsOn);
     } catch (error) {
@@ -259,21 +282,27 @@ class SkylineControllerImpl implements SkylineController {
     const bare = this.options.variant === 'bare';
     this.detailsButton.hidden = bare || !this.options.showControls;
     this.legend.hidden = bare || !this.options.showLegend;
-    if (bare && this.settingsOpen) {
+    if ((bare || !this.options.showControls) && this.settingsOpen) {
+      if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
+      this.focusFrame = null;
       this.settingsOpen = false;
       this.panel.removeAttribute('data-open');
       this.panel.setAttribute('aria-hidden', 'true');
       this.panel.inert = true;
       this.detailsButton.setAttribute('aria-expanded', 'false');
+      this.shell.focus();
     }
 
     const state = invalidMessage ? 'invalid' : this.options.status === 'loading' ? 'loading' : this.options.status === 'error' ? 'error' : this.grid.days.length ? 'ready' : 'empty';
     this.renderState(state, invalidMessage);
     if (state !== 'ready') {
+      this.hideTooltip();
       this.renderer?.destroy();
       this.renderer = null;
+      this.intersectionObserver?.disconnect();
       return;
     }
+    if (this.renderer?.hasFailed()) { this.renderer.destroy(); this.renderer = null; }
     if (!this.renderer) this.createRenderer();
     else this.renderer.update({
       grid: this.grid,
@@ -284,8 +313,12 @@ class SkylineControllerImpl implements SkylineController {
       showLabels: this.options.showLabels,
       maxDevicePixelRatio: this.options.maxDevicePixelRatio,
       reducedMotion: this.options.reducedMotion,
+      locale: this.options.locale,
+      weekStartsOn: this.options.weekStartsOn,
       onViewChange: (view) => this.handleViewChange(view),
     });
+    if (this.options.flattenMode === 'always') this.setView('graph');
+    if (this.options.flattenMode === 'never') this.setView('skyline');
   }
 
   private createRenderer(): void {
@@ -300,16 +333,22 @@ class SkylineControllerImpl implements SkylineController {
         maxDevicePixelRatio: this.options.maxDevicePixelRatio,
         initialView: this.options.initialView,
         reducedMotion: this.options.reducedMotion,
+        locale: this.options.locale,
+        weekStartsOn: this.options.weekStartsOn,
+        onError: () => this.renderState('error', 'The renderer stopped unexpectedly. Contribution data remains available below.'),
         onViewChange: (view) => this.handleViewChange(view),
       });
       this.updateHint(this.options.initialView);
-      if (typeof IntersectionObserver !== 'undefined') {
+      if (!this.renderer.hasFailed() && typeof IntersectionObserver !== 'undefined') {
         this.intersectionObserver?.disconnect();
         this.intersectionObserver = new IntersectionObserver(([entry]) => this.renderer?.setActive(Boolean(entry?.isIntersecting)), { threshold: 0.01 });
         this.intersectionObserver.observe(this.shell);
       }
-    } catch {
-      this.renderState('canvas', 'Your browser does not provide the Canvas 2D features required for this visualization.');
+    } catch (error) {
+      this.renderer?.destroy();
+      this.renderer = null;
+      if (error instanceof CanvasUnavailableError) this.renderState('canvas', 'Your browser does not provide Canvas 2D. Contribution data remains available below.');
+      else this.renderState('error', 'The renderer could not start. Contribution data remains available below.');
     }
   }
 
@@ -326,7 +365,9 @@ class SkylineControllerImpl implements SkylineController {
   private renderPaletteCards(): void {
     const focusedPalette = this.shadow.activeElement instanceof HTMLButtonElement ? this.shadow.activeElement.dataset.palette : undefined;
     const palettes: CustomSkylinePalette[] = paletteOrder.map((name) => SKYLINE_PALETTES[name]);
-    if (!paletteOrder.includes(this.options.palette.name as SkylinePaletteName)) palettes.push(this.options.palette);
+    const customIndex = palettes.findIndex(palette => palette.name === this.options.palette.name);
+    if (customIndex < 0) palettes.push(this.options.palette);
+    else palettes[customIndex] = this.options.palette;
     this.paletteGrid.replaceChildren(...palettes.map((palette) => {
       const button = createElement('button', 'palette-button');
       button.type = 'button';
@@ -346,7 +387,12 @@ class SkylineControllerImpl implements SkylineController {
       button.append(ramp, name);
       return button;
     }));
-    if (focusedPalette && this.settingsOpen) this.paletteGrid.querySelector<HTMLButtonElement>(`[data-palette="${focusedPalette}"]`)?.focus();
+    if (focusedPalette && this.settingsOpen) this.focusPalette(focusedPalette);
+  }
+
+  private focusPalette(name: string): void {
+    // Compare data values directly: custom names are never CSS selectors.
+    [...this.paletteGrid.querySelectorAll<HTMLButtonElement>('[data-palette]')].find(button => button.dataset.palette === name)?.focus();
   }
 
   private renderLegend(): void {
@@ -361,7 +407,7 @@ class SkylineControllerImpl implements SkylineController {
     const caption = createElement('caption');
     caption.textContent = 'Exact contribution counts for the displayed period';
     const body = createElement('tbody');
-    for (const day of this.grid.days.filter((item) => item.source === 'provided')) {
+    for (const day of this.grid.days) {
       const row = createElement('tr');
       const date = createElement('th');
       date.scope = 'row';
@@ -381,7 +427,7 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   private updateIdentity(): void {
-    const total = this.options.totalContributions ?? this.grid.totalContributions;
+    const total = Number.isSafeInteger(this.options.totalContributions) && this.options.totalContributions! >= 0 ? this.options.totalContributions! : this.grid.totalContributions;
     const count = new Intl.NumberFormat(this.options.locale).format(total);
     this.identity.textContent = this.options.username ? `github.com/${this.options.username} / ${count} contributions` : `${count} contributions`;
   }
@@ -390,7 +436,7 @@ class SkylineControllerImpl implements SkylineController {
     const copy = {
       ready: ['', ''],
       loading: ['Loading contributions', 'The skyline will appear when contribution data is ready.'],
-      error: ['Unable to load contributions', this.options.errorMessage],
+      error: ['Unable to display contributions', detail || this.options.errorMessage],
       empty: ['No contributions to display', 'Provide contribution days to render a skyline.'],
       invalid: ['Invalid contribution data', detail],
       canvas: ['Canvas is unavailable', detail],
@@ -401,12 +447,18 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   private toggleSettings(force?: boolean): void {
+    if (this.disposed || this.detailsButton.hidden) return;
+    if (this.focusFrame !== null) cancelAnimationFrame(this.focusFrame);
+    this.focusFrame = null;
     this.settingsOpen = force ?? !this.settingsOpen;
     this.panel.toggleAttribute('data-open', this.settingsOpen);
     this.panel.setAttribute('aria-hidden', String(!this.settingsOpen));
     this.panel.inert = !this.settingsOpen;
     this.detailsButton.setAttribute('aria-expanded', String(this.settingsOpen));
-    if (this.settingsOpen) requestAnimationFrame(() => this.paletteGrid.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus());
+    if (this.settingsOpen) this.focusFrame = requestAnimationFrame(() => {
+      this.focusFrame = null;
+      if (!this.disposed && this.settingsOpen) this.paletteGrid.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+    });
     else this.detailsButton.focus();
   }
 
@@ -422,19 +474,21 @@ class SkylineControllerImpl implements SkylineController {
   }
 
   private choosePalette(name: string): void {
-    const palette = SKYLINE_PALETTES[name as SkylinePaletteName] ?? (this.options.palette.name === name ? this.options.palette : null);
+    const builtIn = Object.hasOwn(SKYLINE_PALETTES, name) ? SKYLINE_PALETTES[name as SkylinePaletteName] : null;
+    const palette = this.options.palette.name === name ? this.options.palette : builtIn;
     if (!palette) return;
-    this.input.palette = SKYLINE_PALETTES[name as SkylinePaletteName] ? name as SkylinePaletteName : palette;
+    this.input.palette = palette === builtIn ? name as SkylinePaletteName : palette;
     this.options = resolveOptions(this.input);
     this.options.onPaletteChange?.(this.input.palette);
     this.applyPalette();
     this.renderPaletteCards();
     this.renderLegend();
     this.renderer?.update({ palette: this.options.palette });
-    if (this.settingsOpen) this.paletteGrid.querySelector<HTMLButtonElement>(`[data-palette="${palette.name}"]`)?.focus();
+    if (this.settingsOpen) this.focusPalette(palette.name);
   }
 
   private handlePointerEnter(event: PointerEvent): void {
+    if (this.settingsOpen) return;
     const hover = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
     if (event.pointerType !== 'touch' && hover && (this.options.flattenMode === 'auto' || this.options.flattenMode === 'hover')) this.setView('graph');
   }
@@ -483,7 +537,9 @@ class SkylineControllerImpl implements SkylineController {
       this.toggleSettings(false);
       return;
     }
-    if ((event.key === 'Enter' || event.key === ' ') && !this.settingsOpen && (this.options.flattenMode === 'auto' || this.options.flattenMode === 'press')) {
+    // Native controls keep their own Space/Enter/arrow-key behavior.
+    if (event.target !== this.shell || this.settingsOpen) return;
+    if ((event.key === 'Enter' || event.key === ' ') && (this.options.flattenMode === 'auto' || this.options.flattenMode === 'hover' || this.options.flattenMode === 'press')) {
       event.preventDefault();
       this.setView(this.getView() === 'graph' ? 'skyline' : 'graph');
       return;
@@ -500,6 +556,7 @@ class SkylineControllerImpl implements SkylineController {
     const current = buttons.indexOf(event.target as HTMLButtonElement);
     if (current < 0) return;
     event.preventDefault();
+    event.stopPropagation();
     const columns = 2;
     const next = event.key === 'Home' ? 0
       : event.key === 'End' ? buttons.length - 1

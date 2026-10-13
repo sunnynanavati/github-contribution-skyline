@@ -1,5 +1,5 @@
-import { calculateGeometry, clamp, type SkylineGeometry } from './geometry';
-import { SKYLINE_DEFAULTS } from './defaults';
+import { calculateGeometry, clamp, type SkylineGeometry } from './geometry.js';
+import { SKYLINE_DEFAULTS } from './defaults.js';
 
 /** Shared camera, anchored collapse, and interruptible playback. */
 export const SPLAT_TIMING = {

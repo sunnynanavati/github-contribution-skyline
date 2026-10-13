@@ -40,7 +40,7 @@ test('mobile layout has no horizontal overflow and responds to touch', async ({ 
 
 for (const palette of ['green', 'red', 'mono', 'orange', 'blue', 'yellow']) {
   test(`visual palette: ${palette}`, async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name.includes('mobile'), 'Desktop visual snapshots only');
+    test.skip(testInfo.project.name !== 'chromium', 'Chromium desktop visual baseline; interactions run on all engines');
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     const component = page.locator('[data-github-skyline]').first();

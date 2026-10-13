@@ -5,12 +5,20 @@
   "type": "module",
   "license": "MIT",
   "author": "Sunny Nanavati",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sunnynanavati/github-contribution-skyline.git"
+  },
+  "homepage": "https://github.com/sunnynanavati/github-contribution-skyline#readme",
+  "bugs": {
+    "url": "https://github.com/sunnynanavati/github-contribution-skyline/issues"
+  },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "github",
@@ -51,6 +59,8 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('demo-dist',{recursive:true,force:true})\"",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run build && npm run verify:package",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -60,27 +70,34 @@
     "prepare": "npm run build:lib"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
-    "@eslint/js": "^9.36.0",
-    "@phosphor-icons/react": "^2.1.10",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.55.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.18.6",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",
-    "eslint": "^9.36.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.22",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
     "jsdom": "^27.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.1",
+    "typescript-eslint": "^8.71.2",
     "vite": "^7.1.7",
     "vitest": "^4.1.11"
   }

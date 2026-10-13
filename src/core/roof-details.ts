@@ -1,4 +1,4 @@
-import type { Point } from './geometry';
+import type { Point } from './geometry.js';
 
 export type RoofStyle = 'artDeco' | 'pyramid' | 'mechanical' | 'antenna';
 

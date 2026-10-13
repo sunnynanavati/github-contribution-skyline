@@ -2,7 +2,7 @@
 
 An accessible, themeable GitHub contribution graph rendered as a three-dimensional city skyline. Every day is a building, exact contribution counts drive height, and the skyline can transition back to the familiar flat calendar.
 
-![Signal red contribution skyline](prototypes/screenshots/color-v2.png)
+![Signal red contribution skyline](https://raw.githubusercontent.com/sunnynanavati/github-contribution-skyline/main/docs/preview.png)
 
 The package contains an original Canvas 2D renderer, a React wrapper, and an optional custom element. It does not fetch data or require a GitHub token in the browser.
 
@@ -20,15 +20,7 @@ The package contains an original Canvas 2D renderer, a React wrapper, and an opt
 
 ## Install
 
-```sh
-npm install github-contribution-skyline
-```
-
-React and ReactDOM are peer dependencies.
-
-### Installing this GitHub revision
-
-Until you choose to publish an npm release, install from this repository:
+Version 0.1.0 is not yet published to npm. Install the reviewed GitHub revision:
 
 ```sh
 npm install github:sunnynanavati/github-contribution-skyline#main
@@ -40,6 +32,11 @@ is needed for this public repository. Re-run the install command and rebuild
 your website when upgrading. A copied source folder must be updated separately.
 An existing install pinned to `codex/graph-overlay-experiment` will not follow
 `main` automatically.
+
+After the maintainer publishes 0.1.0, `npm install github-contribution-skyline`
+will work. React users need React and ReactDOM 18.2+ or 19.x in their app. These
+are optional peers so framework-independent consumers do not install React.
+Use Node 24 LTS for development/releasing (Git installs require Node 20.19+).
 
 ## React usage
 
@@ -67,6 +64,19 @@ export function Activity() {
 ```
 
 `contributions` is required. All other props are reactive. `initialView` is read when the renderer is created; use the imperative handle for later view changes.
+
+In React, supplying `palette`, `heightScale`, or `buildingDetail` makes that
+setting controlled. Update it in its matching change callback to accept changes
+from the Details panel; without a callback, the supplied value stays fixed.
+Omitting the prop lets the panel manage that setting internally, including
+across parent rerenders. The imperative core/custom-element APIs keep their own
+settings until `update()` or an attribute change overrides them.
+
+```tsx
+const [heightScale, setHeightScale] = useState(1.4);
+<GitHubSkyline contributions={days} variant="card"
+  heightScale={heightScale} onHeightScaleChange={setHeightScale} />
+```
 
 The default animation is the approved anchored center-out splat: 650ms in each
 direction, quick landing, a 60% outward wave, 13.5% local compression, 5.5% roof
@@ -238,7 +248,7 @@ The element emits `day-hover`, `day-select`, `view-change`, and `palette-change`
 
 ## Accessibility
 
-The Canvas is decorative to assistive technology. Exact provided contribution days are exposed in a semantic table. The focusable component surface supports Enter and Space to switch views, arrow keys to navigate days in graph view, and Escape to close settings. Day selection is announced through a polite live region. Reduced-motion preferences replace animated transitions with immediate state changes.
+The Canvas is decorative to assistive technology. Every displayed day, including zero-filled gaps, is exposed in a semantic table. The focusable component surface supports Enter and Space to switch views, arrow keys to navigate days in graph view, and Escape to close settings. Day selection is announced through a polite live region. Reduced-motion preferences replace animated transitions with immediate state changes, including when the system setting changes while mounted. Give multiple instances distinct `ariaLabel` values. Text/focus contrast is tested for built-in card themes; custom palettes and transparent embeds must be checked against the host site's background.
 
 ## Performance
 
@@ -257,7 +267,7 @@ Fetch GitHub data in a server component, route handler, or build step, then pass
 
 ## Browser support
 
-The package targets current stable Chrome, Edge, Firefox, and Safari releases with Canvas 2D, custom elements, ResizeObserver, and Shadow DOM. `color-mix()` and backdrop filtering have solid-color fallbacks. The React wrapper does not require custom-element registration.
+Browser tests run on Chromium, Firefox, WebKit, and mobile Chromium emulation. The package targets current Chrome, Edge, Firefox, and Safari with Canvas 2D, custom elements, ResizeObserver, and Shadow DOM. Emulation is not a substitute for physical-device testing. `color-mix()` and backdrop filtering have solid-color fallbacks. The React wrapper does not require custom-element registration. Importing any entry point is SSR-safe; only create the renderer or element in a browser. The component injects scoped Shadow DOM styles; sites with restrictive inline-style CSP must allow these styles under their own policy.
 
 ## Troubleshooting
 
@@ -271,6 +281,7 @@ The package targets current stable Chrome, Edge, Firefox, and Safari releases wi
 
 ```sh
 npm install
+npx --no-install playwright install chromium firefox webkit
 npm run dev
 npm run lint
 npm run typecheck
@@ -278,13 +289,29 @@ npm test
 npm run test:e2e
 npm run build
 npm pack --dry-run
+npm run verify:package
+npm audit
 ```
 
-The original visual studies remain in [`prototypes/`](prototypes/).
+`npm run verify` runs lint, types, unit tests, build, and tarball verification.
+`verify:package` installs the actual tarball in a temporary consumer, checks
+strict NodeNext types and SSR, and rejects unexpected files. Browser tests run
+separately with `npm run test:e2e`. Their consumer fixture is not shipped.
+
+Experiments, tuner pages, and old concept art are local-only and ignored by Git.
+Existing history retains the earlier studies; they are excluded from the release
+tree and npm tarball. Do not force-add them.
+
+## Release and demo deployment
+
+See the [release checklist](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/RELEASING.md).
+Pushing code does not publish to npm. The release workflow is manual, main-only,
+requires an exact version confirmation, runs the complete verification workflow,
+and uses npm trusted publishing instead of a stored long-lived token.
 
 ## Contributing and security
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
+See [contribution instructions](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/CONTRIBUTING.md), [code of conduct](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/CODE_OF_CONDUCT.md), and [security policy](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/SECURITY.md).
 
 ## Attribution and independence
 

@@ -16,6 +16,7 @@ export const SKYLINE_STYLES: string = `
     font-family: var(--gcs-font-family);
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   button, input { font: inherit; }
   .shell {
     position: relative;
@@ -55,7 +56,7 @@ export const SKYLINE_STYLES: string = `
   .hint { flex: 0 0 auto; margin-right: 94px; color: var(--gcs-muted); font-weight: 500; }
   .details-toggle {
     position: absolute; z-index: 6; top: 12px; right: 14px;
-    min-width: 84px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-width: 84px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 0 12px; border: 1px solid var(--gcs-border); border-radius: 999px;
     background: color-mix(in srgb, var(--gcs-elevated) 94%, transparent); color: var(--gcs-ink);
     cursor: pointer; font: 650 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -70,7 +71,8 @@ export const SKYLINE_STYLES: string = `
   .sliders-icon i { display: block; height: 1px; background: currentColor; }
   .sliders-icon i:nth-child(2) { width: 8px; margin-left: 4px; }
   .settings-panel {
-    position: absolute; z-index: 5; top: 54px; right: 14px;
+    position: absolute; z-index: 5; top: 62px; right: 14px;
+    max-height: calc(100% - 74px); overflow-y: auto;
     width: min(330px, calc(100% - 28px)); padding: 14px;
     border: 1px solid var(--gcs-border); border-radius: 14px;
     background: color-mix(in srgb, var(--gcs-elevated) 96%, transparent); color: var(--gcs-ink);
@@ -83,7 +85,7 @@ export const SKYLINE_STYLES: string = `
   .settings-panel[data-open] { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
   .settings-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .settings-head strong { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
-  .reset { min-height: 28px; padding: 0 3px; border: 0; background: transparent; color: var(--gcs-muted); cursor: pointer; }
+  .reset { min-height: 44px; min-width: 44px; padding: 0 3px; border: 0; background: transparent; color: var(--gcs-muted); cursor: pointer; }
   .reset:hover { color: var(--gcs-ink); }
   .palette-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 2px 0 10px; }
   .palette-button {
@@ -98,7 +100,7 @@ export const SKYLINE_STYLES: string = `
   .ramp i { height: 12px; border-radius: 2px; }
   .palette-name { overflow: hidden; color: var(--gcs-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .palette-button[aria-checked='true'] .palette-name { color: var(--gcs-ink); }
-  .setting-row { min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--gcs-border); }
+  .setting-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--gcs-border); }
   .switch { position: relative; width: 34px; height: 22px; flex: 0 0 auto; }
   .switch input { position: absolute; opacity: 0; pointer-events: none; }
   .track { position: absolute; inset: 0; border-radius: 999px; background: var(--gcs-border); cursor: pointer; transition: background-color 160ms ease-out; }
@@ -112,7 +114,8 @@ export const SKYLINE_STYLES: string = `
   .switch input:focus-visible + .track { outline: 2px solid var(--gcs-focus); outline-offset: 2px; }
   .range-row { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--gcs-border); }
   .range-meta { display: flex; justify-content: space-between; color: var(--gcs-muted); }
-  input[type='range'] { min-height: 30px; width: 100%; accent-color: var(--gcs-focus); cursor: pointer; }
+  input[type='range'] { min-height: 44px; width: 100%; accent-color: var(--gcs-focus); cursor: pointer; }
+  input[type='range']:focus-visible { outline: 2px solid var(--gcs-focus); outline-offset: 2px; }
   .legend {
     position: absolute; z-index: 2; left: 20px; bottom: 18px;
     display: flex; align-items: center; gap: 5px; color: var(--gcs-muted); pointer-events: none;
@@ -140,12 +143,13 @@ export const SKYLINE_STYLES: string = `
     white-space: nowrap !important; border: 0 !important;
   }
   @media (max-width: 640px) {
-    .shell { min-height: 450px; border-radius: 14px; }
+    :host { --gcs-min-height: 450px; }
+    .shell { border-radius: 14px; }
     .topline { inset: 14px 14px auto; }
     .hint { display: none; }
     .identity { max-width: calc(100% - 100px); }
-    .details-toggle { top: 10px; right: 10px; min-height: 40px; }
-    .settings-panel { top: 54px; right: 10px; width: calc(100% - 20px); max-height: calc(100% - 66px); overflow-y: auto; }
+    .details-toggle { top: 10px; right: 10px; }
+    .settings-panel { top: 60px; right: 10px; width: calc(100% - 20px); }
     .legend { left: 14px; bottom: 14px; }
   }
   @supports not (background: color-mix(in srgb, white, black)) {
