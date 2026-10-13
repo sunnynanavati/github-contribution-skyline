@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 export const context2d = {
   setTransform: vi.fn(), clearRect: vi.fn(), fillRect: vi.fn(), save: vi.fn(), restore: vi.fn(),
   beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(), closePath: vi.fn(), fill: vi.fn(), stroke: vi.fn(),
-  strokeRect: vi.fn(), fillText: vi.fn(),
+  strokeRect: vi.fn(), fillText: vi.fn(), translate: vi.fn(), scale: vi.fn(),
   fillStyle: '', strokeStyle: '', lineWidth: 1, globalAlpha: 1, font: '',
 } as unknown as CanvasRenderingContext2D;
 

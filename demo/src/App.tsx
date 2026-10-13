@@ -1,26 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CodeIcon, CopyIcon, CornersOutIcon } from '@phosphor-icons/react';
 
-import { SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
+import { fromGitHubContributionCalendar, SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
 import { GitHubSkyline } from '../../src/react';
-import { makeFixture } from './fixture';
+import previewData from './data/sunnynanavati.json';
 
 type PanelName = 'install' | 'description' | 'code';
 
 const SOURCE_URL = 'https://github.com/sunnynanavati/github-contribution-skyline';
-const INSTALL_COMMAND = 'npm install github-contribution-skyline';
+const INSTALL_COMMAND = 'npm install github:sunnynanavati/github-contribution-skyline#main';
 const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/react";
 
 <GitHubSkyline
   contributions={contributions}
   palette="red"
-  heightScale={1}
   buildingDetail
 />`;
 
 export function App() {
-  const contributions = useMemo(makeFixture, []);
-  const total = useMemo(() => contributions.reduce((sum, day) => sum + day.count, 0), [contributions]);
+  const contributions = useMemo(() => fromGitHubContributionCalendar(previewData.calendar), []);
+  const total = previewData.calendar.totalContributions;
   const [palette, setPalette] = useState<SkylinePaletteName>('red');
   const displayPalette = useMemo<CustomSkylinePalette>(() => ({
     ...SKYLINE_PALETTES[palette],
@@ -91,14 +90,13 @@ export function App() {
         <div className="component-preview">
           <GitHubSkyline
             contributions={contributions}
-            username="sunny"
+            username={previewData.username}
             totalContributions={total}
             palette={displayPalette}
-            heightScale={1}
             buildingDetail
             variant="card"
             showControls={false}
-            ariaLabel="Sunny's GitHub contribution skyline"
+            ariaLabel={`${previewData.username}'s GitHub contribution skyline`}
           />
         </div>
 
@@ -124,6 +122,7 @@ export function App() {
                 <span className="panel-label">Description</span>
                 <h1>GitHub Contribution Skyline</h1>
                 <p>One year of contribution data becomes a 3D city. Hover, press, or use the keyboard to return to the familiar graph.</p>
+                <p>Actual contribution data for {previewData.username}, captured {previewData.fetchedAt.slice(0, 10)}. This preview uses the same reusable component you install.</p>
                 <a href={SOURCE_URL} target="_blank" rel="noreferrer">View source on GitHub</a>
               </>
             )}

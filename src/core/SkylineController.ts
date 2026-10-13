@@ -1,4 +1,5 @@
 import { normalizeContributions } from './data';
+import { SKYLINE_DEFAULTS } from './defaults';
 import { clampTooltipPosition } from './geometry';
 import { resolvePalette, SKYLINE_PALETTES } from './palettes';
 import { SkylineRenderer } from './SkylineRenderer';
@@ -26,7 +27,7 @@ function resolveOptions(input: SkylineOptions): ResolvedSkylineOptions {
     contributions: input.contributions ?? [],
     username: input.username ?? '',
     palette: resolvePalette(input.palette),
-    heightScale: Math.max(0.4, Math.min(2, input.heightScale ?? 1)),
+    heightScale: Math.max(0.4, Math.min(2, Number.isFinite(input.heightScale) ? input.heightScale! : SKYLINE_DEFAULTS.heightScale)),
     buildingDetail: input.buildingDetail ?? true,
     variant: input.variant === 'card' ? 'card' : 'bare',
     flattenMode: input.flattenMode ?? 'auto',
@@ -202,6 +203,13 @@ class SkylineControllerImpl implements SkylineController {
 
   private bind(reset: HTMLButtonElement): void {
     const signal = this.abort.signal;
+    if (typeof matchMedia === 'function') {
+      matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+        if (this.input.reducedMotion !== undefined) return;
+        this.options = resolveOptions(this.input);
+        this.renderer?.update({ reducedMotion: this.options.reducedMotion });
+      }, { signal });
+    }
     this.detailsButton.addEventListener('click', () => this.toggleSettings(), { signal });
     reset.addEventListener('click', () => this.resetSettings(), { signal });
     this.detailInput.addEventListener('change', () => {
@@ -227,7 +235,7 @@ class SkylineControllerImpl implements SkylineController {
     this.canvas.addEventListener('pointerleave', () => this.hideTooltip(), { signal });
     this.canvas.addEventListener('pointermove', (event) => this.handlePointerMove(event), { signal });
     this.canvas.addEventListener('pointerup', (event) => this.handlePointerUp(event), { signal });
-    this.shell.addEventListener('pointerleave', () => this.handlePointerLeave(), { signal });
+    this.shell.addEventListener('pointerleave', (event) => this.handlePointerLeave(event), { signal });
     this.shell.addEventListener('keydown', (event) => this.handleKeyDown(event), { signal });
   }
 
@@ -404,11 +412,11 @@ class SkylineControllerImpl implements SkylineController {
 
   private resetSettings(): void {
     this.input.palette = 'green';
-    this.input.heightScale = 1;
+    this.input.heightScale = SKYLINE_DEFAULTS.heightScale;
     this.input.buildingDetail = true;
     this.options = resolveOptions(this.input);
     this.options.onPaletteChange?.('green');
-    this.options.onHeightScaleChange?.(1);
+    this.options.onHeightScaleChange?.(SKYLINE_DEFAULTS.heightScale);
     this.options.onBuildingDetailChange?.(true);
     this.apply();
   }
@@ -431,7 +439,10 @@ class SkylineControllerImpl implements SkylineController {
     if (event.pointerType !== 'touch' && hover && (this.options.flattenMode === 'auto' || this.options.flattenMode === 'hover')) this.setView('graph');
   }
 
-  private handlePointerLeave(): void {
+  private handlePointerLeave(event: PointerEvent): void {
+    // Touch emits pointerleave when the finger lifts. Keep its toggled view;
+    // only a hovering pointer leaving the component should raise the skyline.
+    if (event.pointerType === 'touch') return;
     this.hideTooltip();
     if (this.options.flattenMode === 'auto' || this.options.flattenMode === 'hover') this.setView('skyline');
   }

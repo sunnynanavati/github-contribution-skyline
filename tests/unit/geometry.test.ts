@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { animationStep } from '../../src/core/animation';
+import { SplatPlayhead } from '../../src/core/animation';
 import { calculateBuildingHeight } from '../../src/core/buildings';
 import { calculateGeometry, clampTooltipPosition, flatCorners, isoPoint } from '../../src/core/geometry';
 
@@ -21,14 +21,16 @@ describe('geometry and animation', () => {
   });
 
   it('settles an event-driven transition', () => {
-    let value = 0;
-    for (let frame = 0; frame < 100; frame += 1) value = animationStep(value, 1, 16.67);
-    expect(value).toBe(1);
+    const clock = new SplatPlayhead();
+    clock.retarget(clock.duration);
+    for (let frame = 0; frame < 100; frame += 1) clock.advance(16.67);
+    expect(clock.time).toBe(clock.duration);
+    expect(clock.settled).toBe(true);
   });
 
   it('scales building heights and clamps tooltips inside the surface', () => {
-    expect(calculateBuildingHeight(4, 1.4, false)).toBeCloseTo(109.2);
-    expect(calculateBuildingHeight(0, 2, false)).toBe(2.2);
+    expect(calculateBuildingHeight(4, 4, 1.4, false)).toBeCloseTo(109.2);
+    expect(calculateBuildingHeight(0, 4, 2, false)).toBe(2.2);
     expect(clampTooltipPosition(-20, 900, 500, 420)).toEqual({ x: 10, y: 370 });
     expect(clampTooltipPosition(490, 200, 500, 420, 280, 40)).toEqual({ x: 210, y: 148 });
     expect(clampTooltipPosition(20, 15, 500, 420, 280, 40)).toEqual({ x: 10, y: 27 });

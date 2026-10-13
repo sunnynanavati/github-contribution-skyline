@@ -46,6 +46,7 @@
   },
   "scripts": {
     "dev": "vite --config vite.demo.config.ts",
+    "build:lib": "vite build --config vite.library.config.ts && tsc -p tsconfig.build.json",
     "build": "npm run clean && vite build --config vite.library.config.ts && tsc -p tsconfig.build.json && vite build --config vite.demo.config.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('demo-dist',{recursive:true,force:true})\"",
     "lint": "eslint .",
@@ -55,7 +56,8 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "preview": "vite preview --config vite.demo.config.ts",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "prepare": "npm run build:lib"
   },
   "peerDependencies": {
     "react": ">=18",

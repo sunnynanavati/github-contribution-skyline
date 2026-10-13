@@ -26,6 +26,21 @@ npm install github-contribution-skyline
 
 React and ReactDOM are peer dependencies.
 
+### Installing this GitHub revision
+
+Until you choose to publish an npm release, install from this repository:
+
+```sh
+npm install github:sunnynanavati/github-contribution-skyline#main
+```
+
+Use a commit SHA instead of `main` for a reproducible version. Git dependencies
+build their library files using the `prepare` script (Node 20+); no GitHub token
+is needed for this public repository. Re-run the install command and rebuild
+your website when upgrading. A copied source folder must be updated separately.
+An existing install pinned to `codex/graph-overlay-experiment` will not follow
+`main` automatically.
+
 ## React usage
 
 ```tsx
@@ -45,7 +60,6 @@ export function Activity() {
       username="sunny"
       palette="red"
       buildingDetail
-      heightScale={1}
       onDaySelect={(day) => console.log(day)}
     />
   );
@@ -53,6 +67,22 @@ export function Activity() {
 ```
 
 `contributions` is required. All other props are reactive. `initialView` is read when the renderer is created; use the imperative handle for later view changes.
+
+The default animation is the approved anchored center-out splat: 650ms in each
+direction, quick landing, a 60% outward wave, 13.5% local compression, 5.5% roof
+widening, and no rebound. Mid-flight reversals ease over 80ms without restarting.
+The camera, foundations, component bounds, and surrounding layout stay coherent.
+No experimental motion selector or extra React props are required.
+
+Default height is now **1.4×**. Remove an old explicit `heightScale={1}` to use
+the new default, or keep an explicit value to retain your preferred size. Body
+height uses the exact count relative to the busiest day, with a continuous 0.75
+power curve and a 12% minimum for active days. Adjacent counts remain distinct;
+color levels do not determine height. Empty days remain low tiles.
+
+`SKYLINE_DEFAULTS` exports the read-only approved preset for inspection. It is
+not a mutable global settings API. The tuning-room experiment is not shipped in
+the npm package. Bare embeds stay transparent; card chrome remains opt-in.
 
 ```tsx
 const skyline = useRef<GitHubSkylineHandle>(null);
@@ -124,7 +154,7 @@ Pass the serialized `contributions` result to the client component. Private cont
 | `username` | `string` | empty | Account label above the skyline |
 | `totalContributions` | `number` | computed | Optional server-provided total |
 | `palette` | palette name or custom palette | `green` | Complete semantic color theme |
-| `heightScale` | `number` | `1` | Height multiplier, clamped to `0.4-2` |
+| `heightScale` | `number` | `1.4` | Height multiplier, clamped to `0.4-2` |
 | `buildingDetail` | `boolean` | `true` | Enables sparse architectural roof details on selected high-rises |
 | `variant` | `bare`, `card` | `bare` | Transparent skyline-only embed or complete themed card |
 | `flattenMode` | `auto`, `hover`, `press`, `always`, `never` | `auto` | Input behavior for changing views |

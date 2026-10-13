@@ -23,7 +23,7 @@ test('primary demo is accessible and interactive', async ({ page }, testInfo) =>
   await expect(page.locator('#stage-panel')).toContainText('Basic usage');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Install' }).click();
-  await expect(page.locator('#stage-panel')).toContainText('npm install github-contribution-skyline');
+  await expect(page.locator('#stage-panel')).toContainText('npm install github:sunnynanavati/github-contribution-skyline#main');
 
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);

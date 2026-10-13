@@ -90,6 +90,9 @@ describe('skyline controller', () => {
     height.value = '125';
     height.dispatchEvent(new Event('input', { bubbles: true }));
     expect(onHeightScaleChange).toHaveBeenCalledWith(1.25);
+    host.shadowRoot!.querySelector<HTMLButtonElement>('.reset')!.click();
+    expect(height.value).toBe('140');
+    expect(onHeightScaleChange).toHaveBeenLastCalledWith(1.4);
     host.shadowRoot!.querySelector('.shell')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(details.getAttribute('aria-expanded')).toBe('false');
     controller.destroy();
@@ -104,6 +107,27 @@ describe('skyline controller', () => {
     controller.setView('graph');
     expect(controller.getView()).toBe('graph');
     expect(controller.isAnimating()).toBe(false);
+    controller.destroy();
+  });
+
+  it('keeps a touch toggle after the finger leaves the screen', () => {
+    const host = document.createElement('div');
+    const controller = createSkyline(host, {
+      contributions: [{ date: '2026-09-26', count: 7 }], reducedMotion: true,
+    });
+    const canvas = host.shadowRoot!.querySelector('canvas')!;
+    const shell = host.shadowRoot!.querySelector('.shell')!;
+    const touchEvent = (name: string) => {
+      const event = new Event(name);
+      Object.defineProperty(event, 'pointerType', { value: 'touch' });
+      return event;
+    };
+    canvas.dispatchEvent(touchEvent('pointerup'));
+    shell.dispatchEvent(touchEvent('pointerleave'));
+    expect(controller.getView()).toBe('graph');
+    canvas.dispatchEvent(touchEvent('pointerup'));
+    shell.dispatchEvent(touchEvent('pointerleave'));
+    expect(controller.getView()).toBe('skyline');
     controller.destroy();
   });
 });
