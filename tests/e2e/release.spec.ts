@@ -1,23 +1,31 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-test('card controls preserve graph navigation, fit their host, and meet accessibility checks', async ({ page }) => {
+const paletteNames = ['GitHub green', 'Signal red', 'Monochrome', 'Ember orange', 'Ocean blue', 'Solar yellow'];
+
+async function openCardControls(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/consumer.html');
   const element = page.locator('github-contribution-skyline');
   await element.evaluate(node => { node.setAttribute('variant', 'card'); node.setAttribute('flatten-mode', 'always'); });
+  await element.getByRole('button', { name: 'Details' }).click();
+  await expect(element.locator('.settings-panel')).toHaveAttribute('aria-hidden', 'false');
+  return element;
+}
+
+test('card controls preserve graph navigation and fit their host', async ({ page }) => {
+  const element = await openCardControls(page);
   const details = element.getByRole('button', { name: 'Details' });
-  await details.click();
   const panel = element.locator('.settings-panel');
-  await expect(panel).toHaveAttribute('aria-hidden', 'false');
   const height = element.locator('input[type="range"]');
   await height.focus(); await page.keyboard.press('ArrowRight');
   await expect(height).toHaveValue('145');
   await expect(element.locator('#gcs-live')).toHaveText('');
   await expect(element.locator('.hint')).toHaveText('CONTRIBUTION GRAPH');
-  for (const name of ['GitHub green', 'Signal red', 'Monochrome', 'Ember orange', 'Ocean blue', 'Solar yellow']) {
-    await element.getByRole('radio', { name }).click();
-    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  for (const name of paletteNames) {
+    const palette = element.getByRole('radio', { name });
+    await palette.click();
+    await expect(palette).toHaveAttribute('aria-checked', 'true');
   }
   const hostBox = await element.locator('.shell').boundingBox();
   const panelBox = await panel.boundingBox();
@@ -29,6 +37,18 @@ test('card controls preserve graph navigation, fit their host, and meet accessib
   await element.evaluate(node => node.setAttribute('show-legend', 'false'));
   await expect(element.locator('.legend')).toBeHidden();
 });
+
+// Each full-page audit gets its own test budget. Six audits in a single test
+// exceeded 30 seconds in Linux Firefox despite passing individually on macOS.
+for (const name of paletteNames) {
+  test(`card palette accessibility: ${name}`, async ({ page }) => {
+    const element = await openCardControls(page);
+    const palette = element.getByRole('radio', { name });
+    await palette.click();
+    await expect(palette).toHaveAttribute('aria-checked', 'true');
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  });
+}
 
 test('edge tooltips remain contained without resizing the component', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
