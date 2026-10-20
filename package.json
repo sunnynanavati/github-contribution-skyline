@@ -4,7 +4,6 @@
   "description": "An accessible, themeable GitHub contribution skyline for React and the web.",
   "type": "module",
   "license": "MIT",
-  "author": "Sunny Nanavati",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sunnynanavati/github-contribution-skyline.git"

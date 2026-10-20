@@ -6,6 +6,8 @@ test('primary demo is accessible and interactive', async ({ page }, testInfo) =>
   const component = page.locator('[data-github-skyline]').first();
   const shell = component.locator('.shell');
   await expect(shell).toBeVisible();
+  await expect(shell).toHaveAttribute('aria-label', /synthetic sample data/);
+  await expect(component.locator('.identity')).not.toContainText('github.com/');
   await shell.focus();
   await page.keyboard.press('Enter');
   await expect(component.locator('.hint')).toContainText(/MOVE OUT|HOVER|CONTRIBUTION/);
@@ -17,6 +19,7 @@ test('primary demo is accessible and interactive', async ({ page }, testInfo) =>
   }
   await page.getByRole('button', { name: 'Component description' }).click();
   await expect(page.locator('#stage-panel')).toContainText('GitHub Contribution Skyline');
+  await expect(page.locator('#stage-panel')).toContainText('synthetic sample data');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Component description' })).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: 'Usage code' }).click();

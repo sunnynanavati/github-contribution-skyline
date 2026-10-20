@@ -1,5 +1,12 @@
 # Changelog
 
+## Privacy cleanup
+
+- Replace the personal demo calendar with deterministic synthetic sample data;
+  remove account labels and regenerate preview media and visual baselines.
+- Remove personal author-name metadata. Repository-owner URLs remain necessary
+  for installation and source links. Earlier Git history is not rewritten.
+
 ## Unreleased
 
 - Add the optional `/server` GitHub calendar loader and authenticated local JSON

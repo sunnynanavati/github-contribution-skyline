@@ -31,7 +31,7 @@ describe('skyline controller', () => {
     const host = document.createElement('div');
     const controller = createSkyline(host, {
       contributions: [{ date: '2026-09-26', count: 7 }],
-      username: 'sunny',
+      username: 'example-user',
       reducedMotion: true,
     });
     expect(host.shadowRoot?.querySelector('[role="region"]')?.getAttribute('aria-label')).toBe('GitHub contribution skyline');

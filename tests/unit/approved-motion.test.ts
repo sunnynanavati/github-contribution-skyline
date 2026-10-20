@@ -4,9 +4,9 @@ import { SKYLINE_DEFAULTS } from '../../src/core/defaults';
 import { calculateSkylineGeometry, collapsePhase, heightFactor, leanPulse, poseTimeFor, SplatPlayhead } from '../../src/core/animation';
 import { calculateBuildingHeight } from '../../src/core/buildings';
 import { SkylineScene } from '../../src/core/SkylineScene';
-import { normalizeContributions, fromGitHubContributionCalendar } from '../../src/core/data';
+import { normalizeContributions } from '../../src/core/data';
 import { SKYLINE_PALETTES } from '../../src/core/palettes';
-import snapshot from '../../demo/src/data/sunnynanavati.json';
+import { createDemoContributions } from '../../demo/src/data/synthetic';
 
 function capture() {
   const ops: unknown[][] = [];
@@ -31,11 +31,11 @@ describe('approved production splat', () => {
     expect(Object.isFrozen(SKYLINE_DEFAULTS)).toBe(true);
   });
 
-  it('matches 288 approved reference frames, including roof details and every palette', () => {
-    // Fingerprint recorded from the separately approved experiment before promotion.
+  it('preserves 288 synthetic reference frames, including roof details and every palette', () => {
+    // Synthetic fixture replaces the former account snapshot; motion is unchanged.
     // This covers two viewport sizes, both detail states, six palettes, and 12 poses.
     const hash = createHash('sha256');
-    const grid = normalizeContributions(fromGitHubContributionCalendar(snapshot.calendar));
+    const grid = normalizeContributions(createDemoContributions());
     for (const [width, height] of [[1118, 620], [375, 520]]) for (const detail of [false, true]) for (const palette of Object.values(SKYLINE_PALETTES)) {
       const geometry = calculateSkylineGeometry(width!, height!, grid.weeks, 1.4);
       const scene = new SkylineScene(grid, geometry, palette, 1.4, detail);
@@ -45,7 +45,7 @@ describe('approved production splat', () => {
         hash.update(JSON.stringify(ops));
       }
     }
-    expect(hash.digest('hex')).toBe('1c4dbe97d4ce580e194fb65833b3966d05fd49698a26f85524e73068fe495962');
+    expect(hash.digest('hex')).toBe('69e14d068cb3b2894423911b45c78f4bd22cbe2b4f3c9528e93ee010aa1a5e17');
   });
 
   it('keeps a flat center while the collapse boundary travels to the edges', () => {

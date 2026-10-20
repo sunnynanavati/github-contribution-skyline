@@ -1,5 +1,18 @@
 # Public launch audit — 2026-10-20
 
+## Subsequent privacy cleanup
+
+The account-specific demo snapshot was removed after this audit. The current
+demo, recordings, poster, visual snapshots, and motion fixture use independently
+generated synthetic data, with no account identity supplied to the component.
+Personal author-name metadata was also removed. Repository/install URLs still
+identify the GitHub repository owner; Git commit authors and earlier snapshots
+remain in existing history. This cleanup does not claim to anonymize repository
+ownership or erase previously published revisions. A history rewrite requires
+separate approval and cannot recall existing clones or cached media.
+
+The results below describe the preceding audit, not a new privacy certification.
+
 **Recommendation: 84/100, ready locally with publication gates remaining.** The
 component, demo media, data-loading paths, and documentation pass the checks
 below. At audit completion, the changes awaited commit/push and CI on that exact revision

@@ -243,7 +243,7 @@ Use `card` when you want the self-contained surface with identity text, flatten 
 ```tsx
 <GitHubSkyline
   contributions={contributions}
-  username="sunny"
+  username="YOUR_USERNAME"
   palette="red"
   variant="card"
 />
@@ -337,9 +337,18 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:4180/`. The preview uses a dated public snapshot for
-`sunnynanavati`; it is not a live feed and no token is shipped. The interactive
-demo is bundled in `demo-dist` by `npm run build` for static hosting.
+Open `http://127.0.0.1:4180/`. The preview uses **synthetic sample data** generated
+without a GitHub account, API response, or personal contribution history. No
+username or token is preconfigured. The installed component contains no sample
+calendar; pass your own `contributions` to render it. Follow the static JSON or
+server-side setup above to connect your graph. `username` is only a display label,
+not a connection setting. The interactive demo is bundled in `demo-dist` by
+`npm run build` for static hosting.
+
+The current demo ships no personal account calendar. Repository-owner URLs and
+Git authorship still identify the project maintainer. Earlier public revisions
+may contain the previous demo snapshot; removing current files does not erase
+Git history or copies already downloaded.
 
 The repository includes a small [animated preview](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.gif) and
 [MP4](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) suitable for sharing. To regenerate them, install

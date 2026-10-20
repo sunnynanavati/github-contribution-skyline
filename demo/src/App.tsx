@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { fromGitHubContributionCalendar, SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
+import { SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
 import { GitHubSkyline } from '../../src/react';
-import previewData from './data/sunnynanavati.json';
+import { createDemoContributions } from './data/synthetic';
 
 type PanelName = 'install' | 'description' | 'code';
 
@@ -17,8 +17,7 @@ const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/r
 />`;
 
 export function App() {
-  const contributions = useMemo(() => fromGitHubContributionCalendar(previewData.calendar), []);
-  const total = previewData.calendar.totalContributions;
+  const contributions = useMemo(() => createDemoContributions(), []);
   const [palette, setPalette] = useState<SkylinePaletteName>('red');
   const displayPalette = useMemo<CustomSkylinePalette>(() => ({
     ...SKYLINE_PALETTES[palette],
@@ -91,13 +90,11 @@ export function App() {
         <div className="component-preview">
           <GitHubSkyline
             contributions={contributions}
-            username={previewData.username}
-            totalContributions={total}
             palette={displayPalette}
             buildingDetail
             variant="card"
             showControls={false}
-            ariaLabel={`${previewData.username}'s GitHub contribution skyline`}
+            ariaLabel="Illustrative contribution skyline — synthetic sample data"
           />
         </div>
 
@@ -124,7 +121,7 @@ export function App() {
                 <span className="panel-label">Description</span>
                 <h1>GitHub Contribution Skyline</h1>
                 <p>One year of contribution data becomes a 3D city. Hover, press, or use the keyboard to return to the familiar graph.</p>
-                <p>Actual contribution data for {previewData.username}, captured {previewData.fetchedAt.slice(0, 10)}. This preview uses the same reusable component you install.</p>
+                <p>This preview uses synthetic sample data, not anyone's GitHub activity. Connect your own calendar using the static-data or server-side examples in the README. The installed component includes no sample data and fetches no account automatically.</p>
                 <a href={SOURCE_URL} target="_blank" rel="noreferrer">View source on GitHub</a>
               </>
             )}

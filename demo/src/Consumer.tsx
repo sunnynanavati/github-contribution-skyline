@@ -2,11 +2,11 @@ import { createRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 // Self-referencing package exports deliberately exercise dist, not src.
 import { GitHubSkyline, type GitHubSkylineHandle } from 'github-contribution-skyline/react';
-import { SKYLINE_DEFAULTS, fromGitHubContributionCalendar } from 'github-contribution-skyline';
+import { SKYLINE_DEFAULTS } from 'github-contribution-skyline';
 import { defineGitHubSkyline, type GitHubSkylineElement } from 'github-contribution-skyline/element';
-import previewData from './data/sunnynanavati.json';
+import { createDemoContributions } from './data/synthetic';
 
-const contributions = fromGitHubContributionCalendar(previewData.calendar);
+const contributions = createDemoContributions();
 const ref = createRef<GitHubSkylineHandle>();
 defineGitHubSkyline();
 export function Consumer() {

@@ -1,14 +1,14 @@
 # Sharing the skyline
 
-Use `skyline-demo.mp4` for a video post. It is a 20-second, silent 1280×720 H.264
+Use `skyline-demo.mp4` for a video post. It is an 18-second, silent 1280×720 H.264
 recording of the actual component, showing the hover transition, return motion,
 tooltips, and palette changes. `skyline-demo.gif` is the shorter README loop.
-The public contribution snapshot belongs to `sunnynanavati` and is dated
-2026-10-12; the recording does not claim to be a live data feed.
+The preview and recording use synthetic sample data, not anyone's contribution
+history. No account is preconfigured and the recording is not a live data feed.
 
 ## Suggested LinkedIn caption
 
-I turned my GitHub contribution graph into a tiny skyline.
+I built a component that turns GitHub contribution graphs into tiny skylines.
 
 Every day is a building. More contributions make it taller. Hover and the city
 flattens back into the familiar GitHub calendar, with a wave moving from the
