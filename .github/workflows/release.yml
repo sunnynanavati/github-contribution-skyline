@@ -22,7 +22,7 @@ jobs:
     needs: verify
     if: github.ref == 'refs/heads/main' && inputs.confirm == 'publish'
     environment: npm-release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     concurrency: npm-release
     steps:

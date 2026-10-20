@@ -4,6 +4,8 @@ demo-dist/
 coverage/
 playwright-report/
 test-results/
+output/
+.playwright-cli/
 *.tgz
 .DS_Store
 .env

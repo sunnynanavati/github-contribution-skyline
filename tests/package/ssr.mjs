@@ -5,6 +5,8 @@ import { renderToString } from 'react-dom/server';
 import { SKYLINE_DEFAULTS } from 'github-contribution-skyline';
 import { GitHubSkyline } from 'github-contribution-skyline/react';
 import { defineGitHubSkyline } from 'github-contribution-skyline/element';
+import { fetchGitHubContributions } from 'github-contribution-skyline/server';
+assert.equal(typeof fetchGitHubContributions, 'function');
 assert.equal(typeof window, 'undefined');
 defineGitHubSkyline(); // Optional entry point imports safely without a DOM.
 assert.equal(SKYLINE_DEFAULTS.heightScale, 1.4);

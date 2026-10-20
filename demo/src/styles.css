@@ -114,7 +114,7 @@ a {
 }
 
 .component-preview [data-github-skyline] {
-  --gcs-min-height: clamp(420px, 48vw, 620px);
+  --gcs-min-height: clamp(360px, min(48vw, calc(100dvh - 240px)), 620px);
   --gcs-radius: 18px;
   --gcs-shadow: 0 34px 90px rgb(0 0 0 / .34);
 }
@@ -123,6 +123,8 @@ a {
   position: absolute;
   z-index: 4;
   top: 96px;
+  max-height: calc(100% - 120px);
+  overflow-y: auto;
   right: 24px;
   width: min(430px, calc(100% - 48px));
   padding: 24px;
@@ -197,7 +199,7 @@ a {
 }
 
 .command-row button {
-  min-height: 38px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -228,8 +230,8 @@ a {
 }
 
 .palette-tray button {
-  width: 39px;
-  height: 39px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -323,8 +325,8 @@ a {
   }
 
   .palette-tray button {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
   }
 
   .palette-tray button span {
@@ -335,7 +337,7 @@ a {
 
 @media (max-width: 390px) {
   .palette-tray button {
-    width: 34px;
+    width: 44px;
   }
 }
 

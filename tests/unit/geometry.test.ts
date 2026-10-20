@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SplatPlayhead } from '../../src/core/animation';
 import { calculateBuildingHeight } from '../../src/core/buildings';
-import { calculateGeometry, clampTooltipPosition, flatCorners, isoPoint } from '../../src/core/geometry';
+import { calculateGeometry, clampTooltipPosition } from '../../src/core/geometry';
 
 describe('geometry and animation', () => {
   it('fits desktop and compact viewports without negative cell sizes', () => {
@@ -12,12 +12,6 @@ describe('geometry and animation', () => {
     expect(mobile.compact).toBe(true);
     expect(mobile.flatCell).toBeGreaterThanOrEqual(4);
     expect(desktop.flatLeft).toBeGreaterThanOrEqual(0);
-  });
-
-  it('returns stable isometric and flat points', () => {
-    const geometry = calculateGeometry(1000, 600, 53);
-    expect(isoPoint(0, 0, 0, geometry)).toEqual({ x: geometry.isoCenterX, y: geometry.isoCenterY });
-    expect(flatCorners(0, 0, geometry)).toHaveLength(4);
   });
 
   it('settles an event-driven transition', () => {

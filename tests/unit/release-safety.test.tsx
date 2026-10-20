@@ -108,6 +108,34 @@ it('retains uncontrolled settings across parent rerenders', () => {
   expect(height.value).toBe('175');
 });
 
+it('clears stale selected-day announcements when contribution data is replaced', () => {
+  const host = document.createElement('div');
+  const selected = vi.fn();
+  const controller = createSkyline(host, { contributions: days, initialView: 'graph', reducedMotion: true, onDaySelect: selected });
+  const shell = host.shadowRoot!.querySelector<HTMLElement>('.shell')!;
+  const key = () => shell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+  key();
+  expect(host.shadowRoot!.querySelector('#gcs-live')!.textContent).toContain('contribution');
+  controller.update({ contributions: [{ date: '2026-10-18', count: 19 }] });
+  expect(host.shadowRoot!.querySelector('#gcs-live')!.textContent).toBe('');
+  key();
+  expect(selected).toHaveBeenLastCalledWith({ date: '2026-10-18', count: 19, level: 1 });
+  controller.destroy();
+});
+
+it('does not steal focus from a control selected before the opening autofocus frame', () => {
+  const callbacks: FrameRequestCallback[] = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callbacks.push(callback); return callbacks.length; });
+  const host = document.createElement('div'); document.body.append(host);
+  const controller = createSkyline(host, { contributions: days, variant: 'card', reducedMotion: true });
+  const details = host.shadowRoot!.querySelector<HTMLButtonElement>('.details-toggle')!;
+  details.focus(); details.click();
+  const range = host.shadowRoot!.querySelector<HTMLInputElement>('input[type="range"]')!;
+  range.focus(); callbacks[0]?.(performance.now());
+  expect(host.shadowRoot!.activeElement).toBe(range);
+  controller.destroy(); host.remove();
+});
+
 it('registers multiple custom-element names safely and upgrades pre-set data', () => {
   const element = document.createElement('release-test-skyline') as HTMLElement & { contributions: typeof days };
   element.contributions = days; document.body.append(element);

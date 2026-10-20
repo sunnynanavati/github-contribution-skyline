@@ -7,6 +7,7 @@ export default defineConfig({
         index: 'src/index.ts',
         react: 'src/react/index.ts',
         element: 'src/element/index.ts',
+        server: 'src/server/index.ts',
       },
       formats: ['es'],
       fileName: (_format, entryName) => `${entryName}.js`,

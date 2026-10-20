@@ -38,23 +38,6 @@ export function calculateGeometry(width: number, height: number, weeks: number):
   };
 }
 
-export function isoPoint(column: number, row: number, z: number, geometry: SkylineGeometry): Point {
-  return {
-    x: geometry.isoCenterX + (column - row) * geometry.isoW,
-    y: geometry.isoCenterY + (column + row) * geometry.isoH - z,
-  };
-}
-
-export function flatCorners(column: number, row: number, geometry: SkylineGeometry): [Point, Point, Point, Point] {
-  const x = geometry.flatLeft + column * geometry.flatCell + (geometry.flatCell - geometry.flatSize) / 2;
-  const y = geometry.flatTop + row * geometry.flatCell + (geometry.flatCell - geometry.flatSize) / 2;
-  return [{ x, y }, { x: x + geometry.flatSize, y }, { x: x + geometry.flatSize, y: y + geometry.flatSize }, { x, y: y + geometry.flatSize }];
-}
-
-export function mixPoint(a: Point, b: Point, progress: number): Point {
-  return { x: a.x + (b.x - a.x) * progress, y: a.y + (b.y - a.y) * progress };
-}
-
 export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }

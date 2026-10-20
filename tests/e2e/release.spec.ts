@@ -79,5 +79,7 @@ test('Canvas unavailable has a readable fallback with all contribution days', as
   const component = page.locator('[data-github-skyline]').first();
   await expect(component.locator('.state')).toContainText('Canvas is unavailable');
   expect(await component.locator('tbody tr').count()).toBeGreaterThan(365);
+  await component.getByText('View daily contribution data', { exact: true }).click();
+  await expect(component.locator('tbody tr').first()).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add the optional `/server` GitHub calendar loader and authenticated local JSON
+  exporter, with complete static React and cached Next.js onboarding examples.
+- Add a short MP4/GIF demo and a reproducible discovery/rehearsal/record workflow.
+- Make the demo fit laptop viewports, enlarge palette targets, and keep panels bounded.
+- Expose a readable contribution-table fallback on Canvas failure; clear stale
+  selected-day text when replacing data. Remove unused projection helpers.
+- Prevent delayed settings-panel autofocus from stealing focus from a control.
+- Add a local secret-pattern check to CI and pin the tested Ubuntu runner version.
+
 - Patch the source-map-js development dependency advisory; remove the unused
   icon dependency, fixture, old tracked concept art, and prototype assets.
 - Replace the unsupported ESLint 9 toolchain with compatible ESLint 10 tooling.

@@ -87,6 +87,7 @@ class SkylineControllerImpl implements SkylineController {
   private readonly stateMessage: HTMLElement;
   private readonly liveRegion: HTMLElement;
   private readonly semanticTable: HTMLTableElement;
+  private readonly fallback: HTMLDetailsElement;
   private intersectionObserver: IntersectionObserver | null = null;
   private settingsOpen = false;
   private selectedIndex = -1;
@@ -176,7 +177,13 @@ class SkylineControllerImpl implements SkylineController {
     this.state = createElement('div', 'state');
     this.stateTitle = createElement('strong');
     this.stateMessage = createElement('span');
-    this.state.append(this.stateTitle, this.stateMessage);
+    this.fallback = createElement('details', 'data-fallback');
+    this.fallback.hidden = true;
+    const fallbackSummary = createElement('summary');
+    fallbackSummary.textContent = 'View daily contribution data';
+    this.fallback.append(fallbackSummary);
+    this.state.setAttribute('role', 'status');
+    this.state.append(this.stateTitle, this.stateMessage, this.fallback);
     this.liveRegion = createElement('div', 'sr-only');
     this.liveRegion.id = 'gcs-live';
     this.liveRegion.setAttribute('aria-live', 'polite');
@@ -192,6 +199,13 @@ class SkylineControllerImpl implements SkylineController {
 
   update(next: Partial<SkylineOptions>): void {
     if (this.disposed) return;
+    if ((next.contributions !== undefined && next.contributions !== this.input.contributions)
+      || (next.weekStartsOn !== undefined && next.weekStartsOn !== this.input.weekStartsOn)) {
+      this.selectedIndex = -1;
+      this.hideTooltip();
+      this.liveRegion.textContent = '';
+      this.renderer?.setSelectedDate(null);
+    }
     this.input = { ...this.input, ...next };
     this.options = resolveOptions(this.input);
     this.apply();
@@ -444,6 +458,14 @@ class SkylineControllerImpl implements SkylineController {
     this.state.hidden = kind === 'ready';
     this.stateTitle.textContent = copy[0] ?? '';
     this.stateMessage.textContent = copy[1] ?? '';
+    const availableData = (kind === 'canvas' || kind === 'error') && this.grid.days.length > 0;
+    this.fallback.hidden = !availableData;
+    this.semanticTable.className = availableData ? 'fallback-table' : 'sr-only';
+    if (availableData) this.fallback.append(this.semanticTable);
+    else {
+      this.fallback.open = false;
+      this.shell.append(this.semanticTable);
+    }
   }
 
   private toggleSettings(force?: boolean): void {
@@ -457,7 +479,12 @@ class SkylineControllerImpl implements SkylineController {
     this.detailsButton.setAttribute('aria-expanded', String(this.settingsOpen));
     if (this.settingsOpen) this.focusFrame = requestAnimationFrame(() => {
       this.focusFrame = null;
-      if (!this.disposed && this.settingsOpen) this.paletteGrid.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+      const active = this.shadow.activeElement;
+      // Do not steal focus if a fast click or assistive technology has already
+      // moved it to a control while the opening frame was pending.
+      if (!this.disposed && this.settingsOpen && (!active || active === this.detailsButton || active === this.shell)) {
+        this.paletteGrid.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+      }
     });
     else this.detailsButton.focus();
   }

@@ -137,6 +137,12 @@ export const SKYLINE_STYLES: string = `
   .state[hidden] { display: none; }
   .state strong { font-size: 15px; }
   .state span { max-width: 360px; color: var(--gcs-muted); font-size: 13px; line-height: 1.45; }
+  .data-fallback { max-height: 220px; max-width: 100%; overflow: auto; text-align: left; }
+  .data-fallback summary { min-height: 44px; padding: 12px 4px; cursor: pointer; font-size: 13px; }
+  .data-fallback summary:focus-visible { outline: 2px solid var(--gcs-focus); outline-offset: -2px; }
+  .fallback-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .fallback-table caption { text-align: left; padding-bottom: 10px; color: var(--gcs-muted); }
+  .fallback-table th, .fallback-table td { padding: 8px; border-bottom: 1px solid var(--gcs-border); text-align: left; }
   .sr-only {
     position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important;
     margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important;

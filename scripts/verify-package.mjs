@@ -22,8 +22,8 @@ for (const { path } of pack.files) {
   assert.match(path, /^(dist\/.*\.(?:js(?:\.map)?|d\.ts)|README\.md|LICENSE|CHANGELOG\.md|package\.json)$/);
   assert.doesNotMatch(path, /(?:prototype|experiment|fixture|consumer|demo|node_modules)/i);
 }
-for (const path of ['index.js', 'react.js', 'element.js']) {
-  const map = JSON.parse(readFileSync(join(root, 'dist', `${path}.map`), 'utf8'));
+for (const { path } of pack.files.filter(file => file.path.endsWith('.js.map'))) {
+  const map = JSON.parse(readFileSync(join(root, path), 'utf8'));
   for (const source of map.sources) assert.doesNotMatch(source, /^(?:\/|[A-Z]:)|(?:prototype|experiment|demo)/i);
 }
 const consumer = join(temp, 'consumer');

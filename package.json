@@ -50,6 +50,10 @@
     "./element": {
       "types": "./dist/element/index.d.ts",
       "import": "./dist/element.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server.js"
     }
   },
   "scripts": {
@@ -60,6 +64,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify:package": "node scripts/verify-package.mjs",
+    "audit:secrets": "node scripts/audit-secrets.mjs",
+    "data:github": "node scripts/github-data.mjs",
+    "demo:record": "node scripts/record-demo.mjs",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build && npm run verify:package",
     "test": "vitest run",
     "test:watch": "vitest",

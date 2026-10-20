@@ -2,9 +2,14 @@
 
 An accessible, themeable GitHub contribution graph rendered as a three-dimensional city skyline. Every day is a building, exact contribution counts drive height, and the skyline can transition back to the familiar flat calendar.
 
-![Signal red contribution skyline](https://raw.githubusercontent.com/sunnynanavati/github-contribution-skyline/main/docs/preview.png)
+![A contribution skyline flattens into a GitHub calendar on hover, then rises again and changes palettes](https://raw.githubusercontent.com/sunnynanavati/github-contribution-skyline/main/docs/skyline-demo.gif)
 
-The package contains an original Canvas 2D renderer, a React wrapper, and an optional custom element. It does not fetch data or require a GitHub token in the browser.
+[Watch or download the short MP4 demo](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) · [Source](https://github.com/sunnynanavati/github-contribution-skyline) · [MIT license](LICENSE)
+
+An original Canvas 2D renderer with React and Web Component wrappers. Embed just
+the skyline on your own background, or opt into a complete card. No runtime
+dependencies. Your GitHub data stays separate from the renderer; an optional
+server helper loads a calendar using your own username.
 
 ## Features
 
@@ -27,41 +32,96 @@ npm install github:sunnynanavati/github-contribution-skyline#main
 ```
 
 Use a commit SHA instead of `main` for a reproducible version. Git dependencies
-build their library files using the `prepare` script (Node 20+); no GitHub token
-is needed for this public repository. Re-run the install command and rebuild
-your website when upgrading. A copied source folder must be updated separately.
-An existing install pinned to `codex/graph-overlay-experiment` will not follow
-`main` automatically.
+build their library files using `prepare` (Node 20.19+). No GitHub token is needed
+to install this public repository. Re-run the install command, commit your app's
+updated lockfile, and rebuild/redeploy when upgrading; existing sites do not
+automatically change when this repository changes.
 
 After the maintainer publishes 0.1.0, `npm install github-contribution-skyline`
 will work. React users need React and ReactDOM 18.2+ or 19.x in their app. These
 are optional peers so framework-independent consumers do not install React.
 Use Node 24 LTS for development/releasing (Git installs require Node 20.19+).
 
-## React usage
+## Use your own GitHub contributions
+
+Choose one of these paths. `username` labels the component; it does **not** fetch
+data on its own. Contributions include commits, issues, pull requests, and other
+GitHub activity, so the displayed number is not a commit-only total.
+
+### React or any static website: export JSON once
+
+In a clone of this repository, with [GitHub CLI](https://cli.github.com/) installed:
+
+```sh
+npm ci
+gh auth login
+npm run --silent data:github -- YOUR_USERNAME > github-contributions.json
+```
+
+The script uses your existing GitHub CLI login (or a server/local `GITHUB_TOKEN`
+environment variable). It writes only a username, exact day counts/levels, and
+the total. Copy that JSON into your website. No credential is included in the
+file or needed when the site runs. Add a year, such as `2025`, after the username
+to export a calendar year instead of the rolling contribution year.
 
 ```tsx
 import { GitHubSkyline } from 'github-contribution-skyline/react';
-import type { ContributionDay } from 'github-contribution-skyline';
+import type { GitHubContributions } from 'github-contribution-skyline/server';
+import activity from './github-contributions.json';
 
-const days: ContributionDay[] = [
-  { date: '2026-09-24', count: 4 },
-  { date: '2026-09-25', count: 11 },
-  { date: '2026-09-26', count: 2 },
-];
-
+// JSON imports infer level as number; the component validates the data at runtime.
+const data = activity as GitHubContributions;
 export function Activity() {
-  return (
-    <GitHubSkyline
-      contributions={days}
-      username="sunny"
-      palette="red"
-      buildingDetail
-      onDaySelect={(day) => console.log(day)}
-    />
-  );
+  return <GitHubSkyline {...data} palette="red" />;
 }
 ```
+
+The default is transparent, with no card, username text, settings button, or
+legend. Add `variant="card"` for the complete presentation. Pass a fresh
+`contributions` array to update the skyline; there is no built-in polling or
+third-party GitHub proxy. Refresh the JSON and rebuild whenever you want new data,
+or run that step in your own scheduled build.
+
+### Next.js or another server: fetch by username
+
+Keep `GITHUB_TOKEN` in the server's environment or local `.env.local`, never in
+`NEXT_PUBLIC_*`, `VITE_*`, a client component, or a prop. Choose the permissions
+needed for your account; see [GitHub's authentication guide](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
+
+```ts
+// Server or build-time code only
+import { fetchGitHubContributions } from 'github-contribution-skyline/server';
+
+const token = process.env.GITHUB_TOKEN;
+if (!token) throw new Error('Set GITHUB_TOKEN on the server');
+
+const activity = await fetchGitHubContributions({
+  username: 'YOUR_USERNAME',
+  token,
+  // year: 2025, // optional; defaults to GitHub's rolling contribution year
+});
+// Pass only activity to <GitHubSkyline {...activity} />.
+```
+
+The helper validates the requested account and response, times out after ten
+seconds, blocks browser execution, and omits credentials and raw response errors
+from its result/errors. It makes one request per call. Cache the result on your
+server to respect GitHub rate limits. The complete
+[Next.js example](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/examples/nextjs/README.md) includes hourly caching, an error
+fallback, and environment setup. For public sites, review which aggregate
+private contribution counts your token/profile settings make visible.
+
+### Already have contributionCalendar data?
+
+Use the pure adapter; it performs no requests:
+
+```ts
+import { fromGitHubContributionCalendar } from 'github-contribution-skyline';
+
+const contributions = fromGitHubContributionCalendar(calendar);
+```
+
+## React API
 
 `contributions` is required. All other props are reactive. `initialView` is read when the renderer is created; use the imperative handle for later view changes.
 
@@ -73,29 +133,29 @@ across parent rerenders. The imperative core/custom-element APIs keep their own
 settings until `update()` or an attribute change overrides them.
 
 ```tsx
-const [heightScale, setHeightScale] = useState(1.4);
+import { useState } from 'react';
+
+const [heightScale, setHeightScale] = useState(1.4); // inside your component
 <GitHubSkyline contributions={days} variant="card"
   heightScale={heightScale} onHeightScaleChange={setHeightScale} />
 ```
 
-The default animation is the approved anchored center-out splat: 650ms in each
-direction, quick landing, a 60% outward wave, 13.5% local compression, 5.5% roof
-widening, and no rebound. Mid-flight reversals ease over 80ms without restarting.
-The camera, foundations, component bounds, and surrounding layout stay coherent.
-No experimental motion selector or extra React props are required.
+The center-out flattening transition takes 650ms in either direction. Interrupted
+hovers reverse smoothly from the current pose. The component and surrounding
+layout retain their bounds throughout.
 
-Default height is now **1.4×**. Remove an old explicit `heightScale={1}` to use
-the new default, or keep an explicit value to retain your preferred size. Body
+Default height is **1.4×**. Explicit props override defaults. Body
 height uses the exact count relative to the busiest day, with a continuous 0.75
 power curve and a 12% minimum for active days. Adjacent counts remain distinct;
 color levels do not determine height. Empty days remain low tiles.
 
-`SKYLINE_DEFAULTS` exports the read-only approved preset for inspection. It is
-not a mutable global settings API. The tuning-room experiment is not shipped in
-the npm package. Bare embeds stay transparent; card chrome remains opt-in.
+`SKYLINE_DEFAULTS` exports the read-only defaults for inspection.
 
 ```tsx
-const skyline = useRef<GitHubSkylineHandle>(null);
+import { useRef } from 'react';
+import type { GitHubSkylineHandle } from 'github-contribution-skyline/react';
+
+const skyline = useRef<GitHubSkylineHandle>(null); // inside your component
 
 <GitHubSkyline ref={skyline} contributions={days} />
 <button onClick={() => skyline.current?.setView('graph')}>Show graph</button>
@@ -113,49 +173,6 @@ type ContributionDay = {
 
 Dates use `YYYY-MM-DD` and are interpreted in UTC. Missing dates inside the displayed period are filled with zeroes. Duplicate dates are merged by summing counts, and the last explicit level wins. If levels are omitted, the package derives relative quartiles from the supplied exact counts. Input can span a partial year or up to 54 displayed calendar weeks.
 
-## GitHub GraphQL adapter
-
-GitHub's `contributionCalendar` includes exact daily counts, relative levels, dates, weeks, and a total. Fetch it on a server because a GitHub token must never be embedded in browser code.
-
-```ts
-// Server-only module
-import { fromGitHubContributionCalendar } from 'github-contribution-skyline';
-
-const query = `
-  query Contributions($login: String!) {
-    user(login: $login) {
-      contributionsCollection {
-        contributionCalendar {
-          totalContributions
-          weeks {
-            contributionDays {
-              date
-              contributionCount
-              contributionLevel
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
-const response = await fetch('https://api.github.com/graphql', {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ query, variables: { login: 'sunny' } }),
-});
-
-const payload = await response.json();
-const calendar = payload.data.user.contributionsCollection.contributionCalendar;
-const contributions = fromGitHubContributionCalendar(calendar);
-```
-
-Pass the serialized `contributions` result to the client component. Private contribution visibility follows the permissions and profile settings of the server-side GitHub token.
-
 ## Props
 
 | Prop | Type | Default | Purpose |
@@ -169,8 +186,8 @@ Pass the serialized `contributions` result to the client component. Private cont
 | `variant` | `bare`, `card` | `bare` | Transparent skyline-only embed or complete themed card |
 | `flattenMode` | `auto`, `hover`, `press`, `always`, `never` | `auto` | Input behavior for changing views |
 | `initialView` | `skyline`, `graph` | `skyline` | Initial renderer view |
-| `showControls` | `boolean` | `true` | Displays the Details panel |
-| `showLegend` | `boolean` | `true` | Displays the contribution ramp |
+| `showControls` | `boolean` | `true` | Displays the Details panel in the `card` variant |
+| `showLegend` | `boolean` | `true` | Displays the contribution ramp in the `card` variant |
 | `showLabels` | `boolean` | `true` | Displays calendar labels in graph view |
 | `locale` | `string` | `en-US` | Date and number locale |
 | `weekStartsOn` | `0`, `1` | `0` | Sunday or Monday alignment |
@@ -234,14 +251,21 @@ Use `card` when you want the self-contained surface with identity text, flatten 
 
 ## Custom element
 
+With a bundler, register the element and pass the same exported data. Add this
+tag to your HTML:
+
+```html
+<github-contribution-skyline palette="blue" variant="card"></github-contribution-skyline>
+```
+
 ```ts
 import { defineGitHubSkyline } from 'github-contribution-skyline/element';
+import type { GitHubContributions } from 'github-contribution-skyline/server';
+import activity from './github-contributions.json';
 
 defineGitHubSkyline();
 const skyline = document.querySelector('github-contribution-skyline');
-skyline.contributions = days;
-skyline.setAttribute('palette', 'blue');
-skyline.setAttribute('variant', 'card');
+if (skyline) skyline.contributions = (activity as GitHubContributions).contributions;
 ```
 
 The element emits `day-hover`, `day-select`, `view-change`, and `palette-change` custom events.
@@ -256,14 +280,10 @@ The renderer draws only after data, size, palette, settings, or view changes. It
 
 ## SSR and Next.js
 
-The React wrapper renders a stable host during SSR and creates the renderer after hydration. In the Next.js App Router, render it from a client component:
-
-```tsx
-'use client';
-export { GitHubSkyline } from 'github-contribution-skyline/react';
-```
-
-Fetch GitHub data in a server component, route handler, or build step, then pass serializable contribution days to the client component.
+The React entry preserves its `'use client'` boundary and renders a stable host
+during SSR. You can import it from a Next.js server page and pass serializable
+data; the Canvas initializes after hydration. The optional `/server` entry is
+only for server/build code. See the [complete Next.js example](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/examples/nextjs/README.md).
 
 ## Browser support
 
@@ -276,6 +296,11 @@ Browser tests run on Chromium, Firefox, WebKit, and mobile Chromium emulation. T
 - Missing private contributions: verify server token permissions and the GitHub profile setting.
 - Blurry Canvas: raise `maxDevicePixelRatio` carefully; higher values use more memory.
 - Next.js hydration: fetch server-side and render the wrapper from a client boundary.
+- Username changed but data did not: `username` is a label; fetch/export that user's data and pass the new array.
+- No automatic updates: refetch on your server or regenerate the JSON; the renderer never polls GitHub.
+- Settings appear fixed: supplied setting props are controlled; update them in their callbacks or omit them.
+- Installed changes not visible: update the Git dependency/lockfile and rebuild your app. Explicit props still override new defaults.
+- Git install asks for SSH credentials: use the explicit HTTPS form, `npm install git+https://github.com/sunnynanavati/github-contribution-skyline.git#main`.
 
 ## Development
 
@@ -291,6 +316,7 @@ npm run build
 npm pack --dry-run
 npm run verify:package
 npm audit
+npm run audit:secrets
 ```
 
 `npm run verify` runs lint, types, unit tests, build, and tarball verification.
@@ -301,6 +327,32 @@ separately with `npm run test:e2e`. Their consumer fixture is not shipped.
 Experiments, tuner pages, and old concept art are local-only and ignored by Git.
 Existing history retains the earlier studies; they are excluded from the release
 tree and npm tarball. Do not force-add them.
+
+## Try and record the demo
+
+```sh
+git clone https://github.com/sunnynanavati/github-contribution-skyline.git
+cd github-contribution-skyline
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:4180/`. The preview uses a dated public snapshot for
+`sunnynanavati`; it is not a live feed and no token is shipped. The interactive
+demo is bundled in `demo-dist` by `npm run build` for static hosting.
+
+The repository includes a small [animated preview](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.gif) and
+[MP4](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) suitable for sharing. To regenerate them, install
+FFmpeg and the locked Playwright Chromium browser, run the local server, then:
+
+```sh
+DEMO_URL=http://127.0.0.1:4180 npm run demo:record -- --discover
+DEMO_URL=http://127.0.0.1:4180 npm run demo:record -- --rehearse
+DEMO_URL=http://127.0.0.1:4180 npm run demo:record
+```
+
+Temporary captures stay in ignored `output/`; only the reviewed preview and short
+recording belong in `docs/`. They are excluded from the npm package.
 
 ## Release and demo deployment
 

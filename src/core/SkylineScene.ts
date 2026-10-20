@@ -22,18 +22,17 @@ export class SkylineScene {
   private readonly base = quad();
   private readonly detailTop = quad();
   private readonly face = quad();
-  private readonly maxCount: number;
   private readonly compareDepth = (a: number, b: number) => this.depths[a]! - this.depths[b]! || a - b;
 
   constructor(
     private readonly grid: ContributionGrid,
     private readonly geometry: SkylineGeometry,
-    private readonly palette: CustomSkylinePalette,
-    private readonly heightScale: number,
-    private readonly buildingDetail: boolean,
+    palette: CustomSkylinePalette,
+    heightScale: number,
+    buildingDetail: boolean,
   ) {
     const count = grid.days.length;
-    this.maxCount = maximumContributionCount(grid.days);
+    const maxCount = maximumContributionCount(grid.days);
     this.positions = new Float64Array(count * 2);
     this.heights = new Float64Array(count);
     this.distances = new Float64Array(count);
@@ -42,7 +41,7 @@ export class SkylineScene {
     grid.days.forEach((day, index) => {
       this.positions[index * 2] = day.weekIndex + 0.5 - grid.weeks / 2;
       this.positions[index * 2 + 1] = day.weekday - 3;
-      this.heights[index] = calculateBuildingHeight(day.count, this.maxCount, heightScale, geometry.compact);
+      this.heights[index] = calculateBuildingHeight(day.count, maxCount, heightScale, geometry.compact);
       this.distances[index] = radialDistance(day.weekIndex, day.weekday, grid.weeks);
       const color = palette.levels[day.level];
       this.colors.push(color);
