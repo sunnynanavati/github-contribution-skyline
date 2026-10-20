@@ -11,6 +11,12 @@ remain in existing history. This cleanup does not claim to anonymize repository
 ownership or erase previously published revisions. A history rewrite requires
 separate approval and cannot recall existing clones or cached media.
 
+The follow-up push's dependency gate also detected newly indexed advisory
+[GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv).
+The development toolchain now requires patched Vite 7.3.7, with the lockfile
+updated and a clean dependency install/audit. No renderer code or runtime
+dependencies changed.
+
 The results below describe the preceding audit, not a new privacy certification.
 
 **Recommendation: 84/100, ready locally with publication gates remaining.** The

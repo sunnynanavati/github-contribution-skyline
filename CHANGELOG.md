@@ -2,6 +2,8 @@
 
 ## Privacy cleanup
 
+- Require patched Vite 7.3.7 or newer for the development toolchain
+  (GHSA-698v-4r3x-3vcv); no runtime dependency is added.
 - Replace the personal demo calendar with deterministic synthetic sample data;
   remove account labels and regenerate preview media and visual baselines.
 - Remove personal author-name metadata. Repository-owner URLs remain necessary
