@@ -1,6 +1,8 @@
 import { calculateBuildingHeight, maximumContributionCount } from './buildings.js';
 import { type Point, type SkylineGeometry } from './geometry.js';
-import { drawRoofDetail, hasRoofDetail, polygon, roofStyleFor, shade, type RoofStyle } from './roof-details.js';
+import { polygon, shade } from './roof-details.js';
+import { LandmarkMesh } from './LandmarkMesh.js';
+import { selectLandmarks } from './landmarks.js';
 import type { ContributionGrid, CustomSkylinePalette } from './types.js';
 import { splatCamera, collapsePhase, heightFactor, leanPulse, radialDistance, roofSpread } from './animation.js';
 import { SKYLINE_DEFAULTS } from './defaults.js';
@@ -17,10 +19,9 @@ export class SkylineScene {
   private readonly order: number[];
   private readonly colors: string[] = [];
   private readonly sides: [string, string][] = [];
-  private readonly roofs: (RoofStyle | null)[] = [];
+  private readonly meshes = new Map<number, LandmarkMesh>();
   private readonly top = quad();
   private readonly base = quad();
-  private readonly detailTop = quad();
   private readonly face = quad();
   private readonly compareDepth = (a: number, b: number) => this.depths[a]! - this.depths[b]! || a - b;
 
@@ -46,8 +47,10 @@ export class SkylineScene {
       const color = palette.levels[day.level];
       this.colors.push(color);
       this.sides.push([shade(color, 0.68), shade(color, 0.5)]);
-      this.roofs.push(buildingDetail && hasRoofDetail(day.weekIndex, day.weekday, day.level) ? roofStyleFor(day.weekIndex, day.weekday) : null);
     });
+    if (buildingDetail) for (const landmark of selectLandmarks(grid)) {
+      this.meshes.set(landmark.index, new LandmarkMesh(landmark.model, this.colors[landmark.index]!));
+    }
   }
 
   draw(context: CanvasRenderingContext2D, time: number): void {
@@ -76,6 +79,13 @@ export class SkylineScene {
         top.x = base.x + (cx * (spread - 1) + dx) * camera.xx + (cy * (spread - 1) + dy) * camera.xy;
         top.y = base.y - height + (cx * (spread - 1) + dx) * camera.yx + (cy * (spread - 1) + dy) * camera.yy;
       }
+      const mesh = this.meshes.get(index);
+      if (mesh && height >= 0.001) {
+        // Keep the complete day cell beneath its narrower architectural footprint.
+        polygon(context, this.base, this.colors[index]!, 1);
+        mesh.draw(context, camera, x, y, this.heights[index]!, factor, dx, dy, spread);
+        continue;
+      }
       // Deformation can expose an additional side. Cull by projected winding,
       // keeping all sides connected to their unchanged base vertices.
       for (let side = 0; side < 4 && height > 0; side += 1) {
@@ -90,21 +100,6 @@ export class SkylineScene {
         if (area < -0.00001) polygon(context, this.face, this.sides[index]![side % 2 === 1 ? 0 : 1], 1);
       }
       polygon(context, this.top, this.colors[index]!, 1);
-      const roof = this.roofs[index];
-      const detailScale = factor * camera.z;
-      if (roof && detailScale > 0.0001) {
-        // Undo the footprint's Y scaling first: only architectural height is
-        // compressed. The rooftop stays attached to the deformed roof plane.
-        const cy = (this.top[0].y + this.top[2].y) / 2;
-        for (let corner = 0; corner < 4; corner += 1) {
-          this.detailTop[corner]!.x = this.top[corner]!.x;
-          this.detailTop[corner]!.y = cy + (this.top[corner]!.y - cy) / detailScale;
-        }
-        context.save();
-        context.translate(0, cy); context.scale(1, detailScale); context.translate(0, -cy);
-        drawRoofDetail(context, roof, this.detailTop, this.colors[index]!, 1);
-        context.restore();
-      }
     }
   }
 }

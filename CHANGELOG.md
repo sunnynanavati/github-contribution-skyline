@@ -11,6 +11,14 @@
 
 ## Unreleased
 
+- Promote five approved architectural landmarks to the reusable renderer:
+  Deco needle, faceted pinnacle, pyramid crown, octagonal lantern, and blade crown.
+- Default to 2× height and sparse, deterministic placement on taller contribution
+  days, including two additional Deco accents where suitable. Explicit height
+  settings and the building-detail toggle still override the defaults.
+- Preserve the approved 650ms center-out splat, graph endpoints, interaction,
+  and reduced-motion behavior. Keep experimental previews out of the package.
+
 - Add the optional `/server` GitHub calendar loader and authenticated local JSON
   exporter, with complete static React and cached Next.js onboarding examples.
 - Add a short MP4/GIF demo and a reproducible discovery/rehearsal/record workflow.

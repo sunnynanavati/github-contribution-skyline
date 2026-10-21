@@ -5,7 +5,7 @@ test('built React package and custom element use the approved transparent defaul
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/consumer.html');
-  await expect(page.getByText('Default height: 1.4×. Duration: 650ms.')).toBeVisible();
+  await expect(page.getByText('Default height: 2×. Duration: 650ms.')).toBeVisible();
   const component = page.locator('[data-github-skyline]').first();
   const shell = component.locator('.shell');
   const canvas = component.locator('canvas');
@@ -13,7 +13,7 @@ test('built React package and custom element use the approved transparent defaul
   await expect(shell).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(component.locator('.details-toggle')).toBeHidden();
   await expect(component.locator('.identity')).toBeHidden();
-  await expect(component.locator('input[name="heightScale"]')).toHaveValue('140');
+  await expect(component.locator('input[name="heightScale"]')).toHaveValue('200');
   expect(await canvas.evaluate(c => (c as HTMLCanvasElement).getContext('2d')!.getImageData(0, 0, 1, 1).data[3])).toBe(0);
   const pixels = () => canvas.evaluate(c => (c as HTMLCanvasElement).toDataURL());
   const skyline = await pixels();
@@ -38,7 +38,7 @@ test('built React package and custom element use the approved transparent defaul
   await expect(component.locator('#gcs-live')).toContainText('contribution');
   const element = page.locator('github-contribution-skyline');
   await expect(element.locator('.shell')).toHaveAttribute('data-variant', 'bare');
-  await expect(element.locator('input[name="heightScale"]')).toHaveValue('140');
+  await expect(element.locator('input[name="heightScale"]')).toHaveValue('200');
   await element.locator('.shell').focus(); await page.keyboard.press('Enter');
   await page.keyboard.press('ArrowRight');
   await expect(element.locator('#gcs-live')).toContainText('contribution');

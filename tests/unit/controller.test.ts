@@ -92,8 +92,8 @@ describe('skyline controller', () => {
     height.dispatchEvent(new Event('input', { bubbles: true }));
     expect(onHeightScaleChange).toHaveBeenCalledWith(1.25);
     host.shadowRoot!.querySelector<HTMLButtonElement>('.reset')!.click();
-    expect(height.value).toBe('140');
-    expect(onHeightScaleChange).toHaveBeenLastCalledWith(1.4);
+    expect(height.value).toBe('200');
+    expect(onHeightScaleChange).toHaveBeenLastCalledWith(2);
     host.shadowRoot!.querySelector('.shell')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(details.getAttribute('aria-expanded')).toBe('false');
     controller.destroy();

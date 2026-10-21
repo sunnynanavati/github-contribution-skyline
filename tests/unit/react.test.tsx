@@ -11,7 +11,7 @@ describe('React wrapper', () => {
     const view = render(<GitHubSkyline contributions={[{ date: '2026-09-26', count: 4 }]} palette="red" reducedMotion />);
     const host = view.container.firstElementChild as HTMLElement;
     expect(host.shadowRoot).not.toBeNull();
-    expect(host.shadowRoot?.querySelector<HTMLInputElement>('input[name="heightScale"]')?.value).toBe('140');
+    expect(host.shadowRoot?.querySelector<HTMLInputElement>('input[name="heightScale"]')?.value).toBe('200');
     view.rerender(<GitHubSkyline contributions={[{ date: '2026-09-26', count: 4 }]} palette="blue" reducedMotion />);
     expect(host.style.getPropertyValue('--gcs-surface')).toBe('#071522');
     view.unmount();

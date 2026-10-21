@@ -18,8 +18,8 @@ test('card controls preserve graph navigation and fit their host', async ({ page
   const details = element.getByRole('button', { name: 'Details' });
   const panel = element.locator('.settings-panel');
   const height = element.locator('input[type="range"]');
-  await height.focus(); await page.keyboard.press('ArrowRight');
-  await expect(height).toHaveValue('145');
+  await height.focus(); await page.keyboard.press('ArrowLeft');
+  await expect(height).toHaveValue('195');
   await expect(element.locator('#gcs-live')).toHaveText('');
   await expect(element.locator('.hint')).toHaveText('CONTRIBUTION GRAPH');
   for (const name of paletteNames) {

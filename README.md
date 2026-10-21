@@ -18,7 +18,7 @@ server helper loads a calendar using your own username.
 - Hover, touch, and keyboard view switching
 - Semantic contribution table and live keyboard announcements
 - Six built-in semantic palettes and custom palette support
-- Art Deco crowns, pyramids, mechanical penthouses, antennas, and conventional spires
+- Five architectural landmarks: Deco needle, faceted pinnacle, pyramid crown, octagonal lantern, and blade crown
 - Loading, empty, invalid-data, Canvas-unavailable, and renderer-error states
 - Responsive sizing, capped device pixel ratio, reduced motion, and offscreen pausing
 - React and Web Component entry points
@@ -135,7 +135,7 @@ settings until `update()` or an attribute change overrides them.
 ```tsx
 import { useState } from 'react';
 
-const [heightScale, setHeightScale] = useState(1.4); // inside your component
+const [heightScale, setHeightScale] = useState(2); // inside your component
 <GitHubSkyline contributions={days} variant="card"
   heightScale={heightScale} onHeightScaleChange={setHeightScale} />
 ```
@@ -144,10 +144,20 @@ The center-out flattening transition takes 650ms in either direction. Interrupte
 hovers reverse smoothly from the current pose. The component and surrounding
 layout retain their bounds throughout.
 
-Default height is **1.4×**. Explicit props override defaults. Body
+Default height is **2×**. Explicit props override defaults. Body
 height uses the exact count relative to the busiest day, with a continuous 0.75
 power curve and a 12% minimum for active days. Adjacent counts remain distinct;
 color levels do not determine height. Empty days remain low tiles.
+
+Building detail adds five original architectural silhouettes: **Deco needle,
+faceted pinnacle, pyramid crown, octagonal lantern, and blade crown**. Placement
+is deterministic and count-based: taller days receive spaced landmarks, while
+the majority remain simple buildings. The renderer targets 9% of active days,
+capped at 28 landmarks, and favors two additional Deco accents where suitable.
+Short or sparse calendars may have fewer. Crowns stay inside each day's
+count-derived height; detail does not inflate contribution counts or move cells.
+Set `buildingDetail={false}` for plain buildings or `heightScale={1.4}` for the
+previous shorter scale. The same 650ms center-out splat applies to every design.
 
 `SKYLINE_DEFAULTS` exports the read-only defaults for inspection.
 
@@ -181,8 +191,8 @@ Dates use `YYYY-MM-DD` and are interpreted in UTC. Missing dates inside the disp
 | `username` | `string` | empty | Account label above the skyline |
 | `totalContributions` | `number` | computed | Optional server-provided total |
 | `palette` | palette name or custom palette | `green` | Complete semantic color theme |
-| `heightScale` | `number` | `1.4` | Height multiplier, clamped to `0.4-2` |
-| `buildingDetail` | `boolean` | `true` | Enables sparse architectural roof details on selected high-rises |
+| `heightScale` | `number` | `2` | Height multiplier, clamped to `0.4-2` |
+| `buildingDetail` | `boolean` | `true` | Enables the five architectural landmark designs on selected taller days |
 | `variant` | `bare`, `card` | `bare` | Transparent skyline-only embed or complete themed card |
 | `flattenMode` | `auto`, `hover`, `press`, `always`, `never` | `auto` | Input behavior for changing views |
 | `initialView` | `skyline`, `graph` | `skyline` | Initial renderer view |
