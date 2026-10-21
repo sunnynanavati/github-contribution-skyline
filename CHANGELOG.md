@@ -15,6 +15,8 @@
 
 ## Privacy cleanup
 
+- Require patched Vitest 4.1.12 or newer for the development test runner
+  (GHSA-qxg6-89mg-rqv8, GHSA-xp26-3454-mjgp); no runtime dependency is added.
 - Require patched Vite 7.3.7 or newer for the development toolchain
   (GHSA-698v-4r3x-3vcv); no runtime dependency is added.
 - Replace the personal demo calendar with deterministic synthetic sample data;
