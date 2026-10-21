@@ -3,11 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { SKYLINE_PALETTES, type CustomSkylinePalette, type SkylinePaletteName } from '../../src';
 import { GitHubSkyline } from '../../src/react';
 import { createDemoContributions } from './data/synthetic';
+import personalPreview from 'virtual:skyline-preview';
+import { BACKGROUND_STORAGE_KEY, DEMO_BACKGROUNDS, backgroundProperties, readDemoBackground } from './backgrounds';
 
-type PanelName = 'install' | 'description' | 'code';
+type PanelName = 'description' | 'code';
 
 const SOURCE_URL = 'https://github.com/sunnynanavati/github-contribution-skyline';
-const INSTALL_COMMAND = 'npm install github:sunnynanavati/github-contribution-skyline#main';
 const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/react";
 
 <GitHubSkyline
@@ -17,20 +18,36 @@ const USAGE_CODE = `import { GitHubSkyline } from "github-contribution-skyline/r
 />`;
 
 export function App() {
-  const contributions = useMemo(() => createDemoContributions(), []);
+  const contributions = useMemo(() => personalPreview?.contributions ?? createDemoContributions(), []);
   const [palette, setPalette] = useState<SkylinePaletteName>('red');
+  const [background, setBackground] = useState(readDemoBackground);
+  const neutrals = DEMO_BACKGROUNDS[background];
   const displayPalette = useMemo<CustomSkylinePalette>(() => ({
     ...SKYLINE_PALETTES[palette],
-    surface: '#111212',
-    elevated: '#1a1c1b',
-    ink: '#eef0ee',
-    muted: '#9ba09d',
-    border: '#3a3d3b',
+    surface: neutrals.surface,
+    elevated: neutrals.elevated,
+    ink: neutrals.ink,
+    muted: neutrals.muted,
+    // Blend the card edge into the demo stage while retaining stable dimensions.
+    border: neutrals.surface,
+    focus: neutrals.focus,
     texture: 'none',
-  }), [palette]);
+  }), [palette, neutrals]);
   const [activePanel, setActivePanel] = useState<PanelName | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
+
+  useEffect(() => {
+    // Match overscroll/native controls too; nothing leaks into the library.
+    const root = document.documentElement;
+    const previousBackground = root.style.backgroundColor;
+    const previousScheme = root.style.colorScheme;
+    root.style.backgroundColor = neutrals.page;
+    root.style.colorScheme = background;
+    try { localStorage.setItem(BACKGROUND_STORAGE_KEY, background); } catch { /* Storage may be disabled. */ }
+    return () => {
+      root.style.backgroundColor = previousBackground;
+      root.style.colorScheme = previousScheme;
+    };
+  }, [background, neutrals]);
 
   useEffect(() => {
     if (!activePanel) return undefined;
@@ -42,28 +59,27 @@ export function App() {
   }, [activePanel]);
 
   const togglePanel = (panel: PanelName) => {
-    setCopied(false);
-    setCopyFailed(false);
     setActivePanel((current) => current === panel ? null : panel);
   };
 
-  const copyInstallCommand = async () => {
-    try { await navigator.clipboard.writeText(INSTALL_COMMAND); setCopied(true); }
-    catch { setCopyFailed(true); }
-  };
-
   return (
-    <main className="demo-page">
+    <main className="demo-page" data-background={background} style={backgroundProperties(background)}>
+      <h1 className="demo-page-title">GitHub Contribution Skyline</h1>
       <section className="component-stage" aria-label="GitHub Contribution Skyline component demo">
         <div className="stage-actions" aria-label="Component actions">
           <button
-            className="install-trigger"
+            className="icon-trigger"
             type="button"
-            aria-expanded={activePanel === 'install'}
-            aria-controls="stage-panel"
-            onClick={() => togglePanel('install')}
+            aria-label="Light background"
+            aria-pressed={background === 'light'}
+            title={background === 'dark' ? 'Switch to light background' : 'Switch to dark background'}
+            onClick={() => setBackground(current => current === 'dark' ? 'light' : 'dark')}
           >
-            Install
+            {background === 'dark' ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.7 13.2A9 9 0 0 1 10.8 3.3a9 9 0 1 0 9.9 9.9Z" /></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></svg>
+            )}
           </button>
           <button
             className="icon-trigger"
@@ -90,38 +106,24 @@ export function App() {
         <div className="component-preview">
           <GitHubSkyline
             contributions={contributions}
+            username={personalPreview?.username}
+            totalContributions={personalPreview?.totalContributions}
             palette={displayPalette}
             buildingDetail
             variant="card"
             showControls={false}
-            ariaLabel="Illustrative contribution skyline — synthetic sample data"
+            ariaLabel={personalPreview ? `${personalPreview.username}'s GitHub contribution skyline` : 'Illustrative contribution skyline — synthetic sample data'}
           />
         </div>
 
         {activePanel && (
           <aside className="stage-panel" id="stage-panel" aria-live="polite">
-            {activePanel === 'install' && (
-              <>
-                <span className="panel-label">Install</span>
-                <h1>Add the component</h1>
-                <p>Install the package, then pass it an array of contribution days.</p>
-                <div className="command-row">
-                  <code>{INSTALL_COMMAND}</code>
-                  <button type="button" onClick={copyInstallCommand} aria-label="Copy install command">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V4H4v12h4" /></svg>
-                    <span>{copied ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                {copyFailed && <p role="status">Clipboard unavailable. Select and copy the command above.</p>}
-              </>
-            )}
-
             {activePanel === 'description' && (
               <>
                 <span className="panel-label">Description</span>
-                <h1>GitHub Contribution Skyline</h1>
+                <h2>GitHub Contribution Skyline</h2>
                 <p>One year of contribution data becomes a 3D city. Hover, press, or use the keyboard to return to the familiar graph.</p>
-                <p>This preview uses synthetic sample data, not anyone's GitHub activity. Connect your own calendar using the static-data or server-side examples in the README. The installed component includes no sample data and fetches no account automatically.</p>
+                <p>{personalPreview ? `A contribution snapshot for ${personalPreview.username}, loaded explicitly for this demo. This is not a live data feed.` : "This preview uses synthetic sample data, not anyone's GitHub activity."} Connect your own calendar using the static-data or server-side examples in the README. The installed component includes no sample data and fetches no account automatically.</p>
                 <a href={SOURCE_URL} target="_blank" rel="noreferrer">View source on GitHub</a>
               </>
             )}
@@ -129,7 +131,7 @@ export function App() {
             {activePanel === 'code' && (
               <>
                 <span className="panel-label">React</span>
-                <h1>Basic usage</h1>
+                <h2>Basic usage</h2>
                 <pre tabIndex={0}><code>{USAGE_CODE}</code></pre>
               </>
             )}

@@ -1,5 +1,18 @@
 # Changelog
 
+## Demo hosting
+
+- Add a persistent light/dark background toggle to the demo. Neutral surfaces,
+  labels, and focus indicators adapt independently of building colors and motion.
+- Blend the preview card into its surrounding background without a visible
+  border or shadow; preserve its bounds, labels, and keyboard focus indicator.
+- Remove the demo's Install button and unused copy/install UI; retain description,
+  usage code, and palette controls.
+- Add an explicitly opted-in, validated personal snapshot preview for recordings
+  and static hosting. Default builds remain synthetic; personal snapshots are
+  ignored by Git and extra JSON fields are not embedded.
+- Add an accessible page heading and inline favicon to the demo.
+
 ## Privacy cleanup
 
 - Require patched Vite 7.3.7 or newer for the development toolchain

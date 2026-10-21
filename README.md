@@ -4,7 +4,7 @@ An accessible, themeable GitHub contribution graph rendered as a three-dimension
 
 ![A contribution skyline flattens into a GitHub calendar on hover, then rises again and changes palettes](https://raw.githubusercontent.com/sunnynanavati/github-contribution-skyline/main/docs/skyline-demo.gif)
 
-[Watch or download the short MP4 demo](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) · [Source](https://github.com/sunnynanavati/github-contribution-skyline) · [MIT license](LICENSE)
+[Live preview](https://github-contribution-skyline-nanavatisunnyswe-8296.vercel.app/) · [Watch or download the short MP4 demo](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) · [Source](https://github.com/sunnynanavati/github-contribution-skyline) · [MIT license](LICENSE)
 
 An original Canvas 2D renderer with React and Web Component wrappers. Embed just
 the skyline on your own background, or opt into a complete card. No runtime
@@ -340,6 +340,11 @@ tree and npm tarball. Do not force-add them.
 
 ## Try and record the demo
 
+Use the moon/sun button in the upper-right toolbar to switch the demo's background
+between dark and light. This browser-local preference changes the preview surfaces
+and UI text only; contribution colors and motion stay unchanged. It is not a new
+library prop or a change to the component's transparent default.
+
 ```sh
 git clone https://github.com/sunnynanavati/github-contribution-skyline.git
 cd github-contribution-skyline
@@ -359,6 +364,27 @@ The current demo ships no personal account calendar. Repository-owner URLs and
 Git authorship still identify the project maintainer. Earlier public revisions
 may contain the previous demo snapshot; removing current files does not erase
 Git history or copies already downloaded.
+
+### Optional personal recording preview
+
+The hosted live preview is a separately opted-in personal snapshot. It does not
+change the account-free defaults of this repository or the reusable package.
+
+Default development and production builds always use synthetic data. For a local
+recording, save your own exported `GitHubContributions` JSON in
+`.local/contributions.json` (ignored by Git), then explicitly opt in:
+
+```sh
+SKYLINE_DEMO_PERSONAL=1 npm run dev -- --host 127.0.0.1 --port 4181
+```
+
+The demo validates and embeds only the username, days, and total—not credentials
+or other JSON fields. The reusable library is unaffected. Restart the demo after
+refreshing the snapshot. An explicitly opted-in build,
+`SKYLINE_DEMO_PERSONAL=1 npm run build`, will make that calendar public if its
+`demo-dist` output is hosted. Deploy only that static output, never `.local`,
+environment files, or tokens. These are snapshots, not automatically refreshed
+GitHub feeds; ordinary `npm run build` remains account-free.
 
 The repository includes a small [animated preview](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.gif) and
 [MP4](https://github.com/sunnynanavati/github-contribution-skyline/blob/main/docs/skyline-demo.mp4) suitable for sharing. To regenerate them, install

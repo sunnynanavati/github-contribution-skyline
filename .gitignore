@@ -11,6 +11,9 @@ output/
 .env
 .env.*
 !.env.example
+# Personal demo snapshots and deployment links are never repository defaults.
+.local/
+.vercel/
 # Local-only visual studies; never add them to release branches.
 prototypes/
 concepts/
