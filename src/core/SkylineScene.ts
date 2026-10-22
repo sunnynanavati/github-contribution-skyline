@@ -42,7 +42,7 @@ export class SkylineScene {
     grid.days.forEach((day, index) => {
       this.positions[index * 2] = day.weekIndex + 0.5 - grid.weeks / 2;
       this.positions[index * 2 + 1] = day.weekday - 3;
-      this.heights[index] = calculateBuildingHeight(day.count, maxCount, heightScale, geometry.compact);
+      this.heights[index] = calculateBuildingHeight(day.count, maxCount, heightScale, false) * geometry.elevationScale;
       this.distances[index] = radialDistance(day.weekIndex, day.weekday, grid.weeks);
       const color = palette.levels[day.level];
       this.colors.push(color);

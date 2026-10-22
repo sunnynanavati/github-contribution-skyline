@@ -26,6 +26,9 @@
 
 ## Unreleased
 
+- Scale building elevations with their footprints in constrained containers so
+  phone skylines retain the desktop proportions. Shorten the mobile demo frame
+  without changing the approved count curve, building designs, or splat timing.
 - Promote five approved architectural landmarks to the reusable renderer:
   Deco needle, faceted pinnacle, pyramid crown, octagonal lantern, and blade crown.
 - Default to 2× height and sparse, deterministic placement on taller contribution

@@ -19,28 +19,31 @@ export function poseTimeFor(time: number): number {
   return SPLAT_TIMING.duration * clamp(time / SPLAT_PLAYBACK.duration, 0, 1);
 }
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
+const REFERENCE_VIEWPORT = { width: 1120, height: 620 } as const;
 
-/** Reserve room for tall fixtures inside the same fixed-size component. */
+/** Fit one proportionate city into the host; never shrink only its foundations. */
 export function calculateSkylineGeometry(width: number, height: number, weeks: number, heightScale: number): SkylineGeometry {
   const g = calculateGeometry(width, height, weeks);
-  // Narrow, tall cards are width-limited. Center their full footprint instead
-  // of retaining the desktop composition's small rightward offset.
-  if (g.compact) {
-    // Leave space for the footprint's wider projection as the camera turns.
-    g.isoW = Math.min(g.isoW, (width - 60) / (weeks + 7));
-    g.isoH = g.isoW * 0.5;
-    g.isoCenterX = width * 0.5 - (weeks - 7) * g.isoW * 0.5;
-  }
-  if (heightScale <= 1) return g;
-  const extra = (heightScale - 1) * (g.compact ? 66 : 78);
-  const isoCenterY = g.isoCenterY + extra;
-  // Use the existing space below the city before reducing its footprint.
-  // Subtracting every extra height pixel from the original fit budget made
-  // even a small height increase zoom the skyline out and alter the morph.
-  // Keep headroom above the tallest roof and 30px below the full foundation.
-  const fitWidth = (height - 30 - isoCenterY) * 2 / (weeks + 7);
-  const isoW = Math.max(2.4, Math.min(g.isoW, fitWidth));
-  return { ...g, isoW, isoH: isoW * 0.5, isoCenterX: width * 0.5 - (weeks - 7) * isoW * (g.compact ? 0.5 : 0.42), isoCenterY };
+  // Calibrate to the approved desktop composition. Height remains count-based;
+  // the responsive zoom applies equally to roofs, walls, and cell spacing.
+  const reference = calculateGeometry(REFERENCE_VIEWPORT.width, REFERENCE_VIEWPORT.height, weeks);
+  const maxHeight = 78 * heightScale;
+  reference.isoCenterY += Math.max(0, heightScale - 1) * 78;
+  if (heightScale > 1) reference.isoW = Math.max(2.4, Math.min(reference.isoW,
+    (REFERENCE_VIEWPORT.height - 30 - reference.isoCenterY) * 2 / (weeks + 7)));
+  const footprintHeight = (weeks + 7) * reference.isoW * 0.5;
+  const centerOffsetY = reference.isoCenterY - REFERENCE_VIEWPORT.height / 2;
+  const halfWidth = footprintHeight + Math.abs(weeks - 7) * reference.isoW * 0.08;
+  const zoom = Math.max(0.01, Math.min(1,
+    (width / 2 - 14) / halfWidth,
+    (height / 2 - 64) / Math.max(1, maxHeight - centerOffsetY),
+    (height / 2 - 30) / Math.max(1, centerOffsetY + footprintHeight)));
+  const isoW = reference.isoW * zoom;
+  return {
+    ...g, isoW, isoH: isoW * 0.5, elevationScale: zoom,
+    isoCenterX: width * 0.5 - (weeks - 7) * isoW * 0.42,
+    isoCenterY: height * 0.5 + centerOffsetY * zoom,
+  };
 }
 
 export function radialDistance(week: number, row: number, weeks: number): number {

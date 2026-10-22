@@ -240,6 +240,12 @@ Advanced layout variables can be set on the host:
 
 Internal DOM structure is not a theming API.
 
+The city scales uniformly to fit its container: building heights, roof details,
+and footprints shrink together on phones instead of producing stretched towers.
+`heightScale` changes relative building proportions, not a guaranteed pixel
+height. Use `--gcs-min-height` to choose the space reserved for your embed; the
+flat calendar and skyline keep that same container size during transitions.
+
 ### Bare and card presentation
 
 The default `bare` variant renders only the interactive skyline on a transparent Canvas. It keeps the semantic contribution table, keyboard behavior, tooltips, and reduced-motion support without imposing a card background or visible component chrome.

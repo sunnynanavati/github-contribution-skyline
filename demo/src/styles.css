@@ -264,10 +264,11 @@ a {
 
   .component-preview {
     width: calc(100% - 24px);
+    container-type: inline-size;
   }
 
   .component-preview [data-github-skyline] {
-    --gcs-min-height: min(520px, 62dvh);
+    --gcs-min-height: clamp(300px, calc(70cqi + 64px), 420px);
     --gcs-radius: 14px;
   }
 

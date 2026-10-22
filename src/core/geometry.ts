@@ -10,6 +10,7 @@ export interface SkylineGeometry {
   isoH: number;
   isoCenterX: number;
   isoCenterY: number;
+  elevationScale: number;
 }
 
 export function calculateGeometry(width: number, height: number, weeks: number): SkylineGeometry {
@@ -35,6 +36,7 @@ export function calculateGeometry(width: number, height: number, weeks: number):
     isoH,
     isoCenterX: width * 0.5 - (columns - 7) * isoW * 0.42,
     isoCenterY: (compact ? 72 : 66) + maxHeight,
+    elevationScale: 1,
   };
 }
 

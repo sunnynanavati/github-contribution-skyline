@@ -44,13 +44,14 @@ describe('approved production splat', () => {
     expect(Object.isFrozen(SKYLINE_DEFAULTS)).toBe(true);
   });
 
-  it('matches the geometry of 288 approved landmark frames across all palettes', () => {
+  it('matches the geometry of 144 approved desktop landmark frames across all palettes', () => {
     // Captured from the approved isolated scene and verified in both Chrome and
-    // Node using only synthetic data: two sizes, both detail states, six palettes,
-    // and 12 poses. No experiment files are imported into the production tests.
+    // Node using only synthetic data: both detail states, six palettes, and 12
+    // poses. Extracted from the existing baseline before the responsive fix;
+    // mobile proportions are now covered by responsive-geometry.test.ts.
     const hash = createHash('sha256');
     const grid = normalizeContributions(createDemoContributions());
-    for (const [width, height] of [[1118, 620], [375, 520]]) for (const detail of [false, true]) for (const palette of Object.values(SKYLINE_PALETTES)) {
+    for (const [width, height] of [[1118, 620]]) for (const detail of [false, true]) for (const palette of Object.values(SKYLINE_PALETTES)) {
       const geometry = calculateSkylineGeometry(width!, height!, grid.weeks, 2);
       const scene = new SkylineScene(grid, geometry, palette, 2, detail);
       for (const time of [0, 60, 120, 180, 250, 300, 360, 420, 540, 648, 720, 800]) {
@@ -59,13 +60,13 @@ describe('approved production splat', () => {
         hash.update(canonicalPaths(ops));
       }
     }
-    expect(hash.digest('hex')).toBe('c201078d7ec620954c867a1686d307404e765f83d1169acbcb25d4d6a1ea291e');
+    expect(hash.digest('hex')).toBe('e4882710d5cb7f209bcc4a924d49fbcd313e2ead3c94558f2562a131dfde0ce3');
   }, 20_000); // Recording every draw call is intentionally heavier than rendering.
 
-  it('preserves all 144 original plain-building frames at an explicit 1.4 scale', () => {
+  it('preserves all 72 original desktop plain-building frames at an explicit 1.4 scale', () => {
     const hash = createHash('sha256');
     const grid = normalizeContributions(createDemoContributions());
-    for (const [width, height] of [[1118, 620], [375, 520]]) for (const palette of Object.values(SKYLINE_PALETTES)) {
+    for (const [width, height] of [[1118, 620]]) for (const palette of Object.values(SKYLINE_PALETTES)) {
       const geometry = calculateSkylineGeometry(width!, height!, grid.weeks, 1.4);
       const scene = new SkylineScene(grid, geometry, palette, 1.4, false);
       for (const time of [0, 60, 120, 180, 250, 300, 360, 420, 540, 648, 720, 800]) {
@@ -74,7 +75,7 @@ describe('approved production splat', () => {
         hash.update(JSON.stringify(ops));
       }
     }
-    expect(hash.digest('hex')).toBe('124c9f84e062476bc2fe55ebafcd55ba8fe8a1ee0b62c18a212333182fa90547');
+    expect(hash.digest('hex')).toBe('e999cb45bd8f93da95d1222b9d219c853e1eff83dcd08bec1f5d8e6edcbc1fd0');
   });
 
   it('keeps a flat center while the collapse boundary travels to the edges', () => {
